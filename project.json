@@ -1,0 +1,22 @@
+{
+  "overview": "Blood Connect is a blood donor matchmaking app where registered donors manage their availability status and seekers can publicly search for nearby donors by blood type — no login needed for seekers. Donors are automatically marked available again 4 months after their last donation. A medical instrument shop directory is also included.",
+  "features": [
+    "Donor registration and login via Internet Identity",
+    "Real-time donor availability status (green/red badge)",
+    "Automatic 4-month availability recovery after donation",
+    "Public donor search by blood type — no login required",
+    "Distance-based donor ranking (nearest first)",
+    "Donor profile cards with name, address, blood type, and contact",
+    "Medical instrument shop directory with external links",
+    "Crimson red and white branding"
+  ],
+  "category": "productivity",
+  "tags": [
+    "blood-donation",
+    "health",
+    "donor-matching",
+    "location-based",
+    "community"
+  ],
+  "last_updated": "2026-04-22T18:49:48.132Z"
+}

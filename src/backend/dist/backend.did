@@ -1,0 +1,41 @@
+type Result = 
+ variant {
+   err: text;
+   ok;
+ };
+type MedicalShop = 
+ record {
+   address: text;
+   description: text;
+   id: nat;
+   name: text;
+   phone: text;
+   website: opt text;
+ };
+type DonorPublicView = 
+ record {
+   address: text;
+   bloodType: text;
+   distanceKm: float64;
+   id: text;
+   isAvailable: bool;
+   lat: float64;
+   lng: float64;
+   name: text;
+   phone: text;
+ };
+service : {
+  addShop: (name: text, address: text, phone: text, website: opt text,
+   description: text) -> (Result);
+  checkAndUpdateAvailability: () -> ();
+  getAllDonors: () -> (vec DonorPublicView) query;
+  getMyProfile: () -> (opt DonorPublicView) query;
+  getShops: () -> (vec MedicalShop) query;
+  logDonation: () -> (Result);
+  registerDonor: (name: text, address: text, bloodType: text, phone: 
+   text, lat: float64, lng: float64) -> (Result);
+  searchDonors: (bloodType: text, seekerLat: float64, seekerLng: float64) ->
+   (vec DonorPublicView);
+  updateDonorProfile: (name: text, address: text, phone: text, lat: float64,
+   lng: float64) -> (Result);
+}
