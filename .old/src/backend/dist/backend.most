@@ -1,0 +1,40 @@
+// Version: 1.0.0
+type BloodType__790543601 =
+  {#ABNeg; #ABPos; #ANeg; #APos; #BNeg; #BPos; #ONeg; #OPos};
+type DonorProfile__94690395 =
+  {
+    var address : Text;
+    bloodType : BloodType__790543601;
+    id : Principal;
+    var isAvailable : Bool;
+    var lastDonationDate : ?Int;
+    var lat : Float;
+    var lng : Float;
+    var name : Text;
+    var phone : Text
+  };
+type MedicalShop__463685521 =
+  {
+    address : Text;
+    description : Text;
+    id : Nat;
+    name : Text;
+    phone : Text;
+    website : ?Text
+  };
+type Nat__490723111 = Nat__920180692;
+type Nat__920180692 = Nat;
+actor {
+  stable donors :
+    {
+      var blockIndex : Nat__490723111;
+      var blocks : [var [var ?DonorProfile__94690395]];
+      var elementIndex : Nat__490723111
+    };
+  stable shops :
+    {
+      var blockIndex : Nat__490723111;
+      var blocks : [var [var ?MedicalShop__463685521]];
+      var elementIndex : Nat__490723111
+    }
+};
