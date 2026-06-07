@@ -56,7 +56,7 @@ export function SearchPage() {
 useEffect(() => {
   const timer = setInterval(() => {
     checkAvailability.mutate();
-  }, 5000);
+  }, 3600000);
 
   return () => clearInterval(timer);
 }, []);

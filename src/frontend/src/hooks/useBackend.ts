@@ -154,6 +154,8 @@ onSuccess: () => {
 }
 
 export function useLogDonation() {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
@@ -171,10 +173,22 @@ export function useLogDonation() {
         ok: null,
       };
     },
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["my-profile"],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["donors"],
+      });
+    },
   });
 }
 
 export function useAddShop() {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (shop: any) => {
       const { error } = await supabase
@@ -195,6 +209,12 @@ export function useAddShop() {
         __kind__: "ok",
         ok: null,
       };
+    },
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["shops"],
+      });
     },
   });
 }
