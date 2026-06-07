@@ -64,6 +64,7 @@ function DonorAvatar({ name }: { name: string }) {
 // ─── Edit Profile Panel ───────────────────────────────────────────────────────
 
 interface EditProfilePanelProps {
+  initialId: string;
   initialName: string;
   initialAddress: string;
   initialPhone: string;
@@ -73,6 +74,7 @@ interface EditProfilePanelProps {
 }
 
 function EditProfilePanel({
+  initialId,
   initialName,
   initialAddress,
   initialPhone,
@@ -82,12 +84,13 @@ function EditProfilePanel({
 }: EditProfilePanelProps) {
   const updateProfile = useUpdateProfile();
   const [form, setForm] = useState({
-    name: initialName,
-    address: initialAddress,
-    phone: initialPhone,
-    lat: initialLat,
-    lng: initialLng,
-  });
+  id: initialId,
+  name: initialName,
+  address: initialAddress,
+  phone: initialPhone,
+  lat: initialLat,
+  lng: initialLng,
+});
   const [gettingLoc, setGettingLoc] = useState(false);
 
   const set = (key: string, value: string | number) =>
@@ -344,7 +347,7 @@ export function DonorDashboard() {
     setDonating(true);
     setConfirmDonate(false);
     try {
-      const result = await logDonation.mutateAsync();
+      const result = await logDonation.mutateAsync(profile.id);
       if (result.__kind__ === "ok") {
         toast.success(
           "Donation recorded! Your status is now unavailable. It will auto-reset in 4 months.",
@@ -572,13 +575,14 @@ export function DonorDashboard() {
 
         {isEditing ? (
           <EditProfilePanel
-            initialName={profile.name}
-            initialAddress={profile.address}
-            initialPhone={profile.phone}
-            initialLat={profile.lat}
-            initialLng={profile.lng}
-            onCancel={() => setIsEditing(false)}
-          />
+  initialId={profile.id}
+  initialName={profile.name}
+  initialAddress={profile.address}
+  initialPhone={profile.phone}
+  initialLat={profile.lat}
+  initialLng={profile.lng}
+  onCancel={() => setIsEditing(false)}
+/>
         ) : (
           <p className="body-sm">
             Click <strong>Edit</strong> to update your name, address, phone

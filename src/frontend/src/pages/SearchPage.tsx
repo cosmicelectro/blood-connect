@@ -17,10 +17,11 @@ import {
   Users,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useAuth } from "../hooks/useAuth";
 import { DonorCard } from "../components/DonorCard";
 import { ErrorMessage } from "../components/ErrorMessage";
-import { useAllDonors, useSearchDonors } from "../hooks/useBackend";
+import { useAllDonors, useCheckAvailability, useSearchDonors } from "../hooks/useBackend";
 import type { BloodType, DonorPublicView } from "../types";
 import { BLOOD_TYPES } from "../types";
 
@@ -45,12 +46,22 @@ function DonorCardSkeleton() {
 
 export function SearchPage() {
   const [bloodTypeFilter, setBloodTypeFilter] = useState<string>("all");
+  const { isLoggedIn } = useAuth();
   const [locationState, setLocationState] = useState<LocationState>({
     status: "idle",
   });
   const [searchTriggered, setSearchTriggered] = useState(false);
+  const checkAvailability = useCheckAvailability();
 
-  const hasLocation = locationState.status === "granted";
+useEffect(() => {
+  const timer = setInterval(() => {
+    checkAvailability.mutate();
+  }, 5000);
+
+  return () => clearInterval(timer);
+}, []);
+
+const hasLocation = locationState.status === "granted";
 
   // Search query — runs when user triggers search with location
   const {
@@ -75,7 +86,7 @@ export function SearchPage() {
 
   const isLoading = searchTriggered && hasLocation ? searchLoading : allLoading;
   const hasError = searchTriggered && hasLocation ? searchError : allError;
-
+  
   // Determine displayed donors
   let displayedDonors: DonorPublicView[] = [];
   if (searchTriggered && hasLocation && searchResults) {
@@ -179,13 +190,15 @@ export function SearchPage() {
               Become a Donor
               <ArrowRight className="h-4 w-4" />
             </a>
-            <a
-              href="/donor"
-              className="inline-flex items-center gap-2 rounded-md border border-primary-foreground/40 px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-smooth hover:bg-primary-foreground/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground"
-              data-ocid="hero.donor_login_link"
-            >
-              Donor Login
-            </a>
+            
+  {!isLoggedIn && (
+  <a
+    href="/donor"
+    className="inline-flex items-center gap-2 rounded-md border border-primary-foreground/40 px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-smooth hover:bg-primary-foreground/10"
+  >
+    Donor Login
+  </a>
+)}
           </motion.div>
         </div>
       </section>

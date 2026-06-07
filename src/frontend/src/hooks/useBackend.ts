@@ -1,21 +1,27 @@
-import { useActor } from "@caffeineai/core-infrastructure";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createActor } from "../backend";
-import type { DonorPublicView, MedicalShop, Result } from "../types";
-
-function useBackendActor() {
-  return useActor(createActor);
-}
+import { supabase } from "../lib/supabase";
 
 export function useAllDonors() {
-  const { actor, isFetching } = useBackendActor();
-  return useQuery<DonorPublicView[]>({
-    queryKey: ["donors", "all"],
+  return useQuery({
+    queryKey: ["donors"],
     queryFn: async () => {
-      if (!actor) return [];
-      return actor.getAllDonors();
+      const { data, error } = await supabase
+        .from("donors")
+        .select("*");
+
+      if (error) throw error;
+      return (data || []).map((d) => ({
+  id: d.id,
+  name: d.name,
+  address: d.address,
+  phone: d.phone,
+  bloodType: d.blood_type,
+  isAvailable: d.available,
+  lat: d.latitude,
+  lng: d.longitude,
+  distanceKm: 0,
+}));
     },
-    enabled: !!actor && !isFetching,
   });
 }
 
@@ -25,136 +31,230 @@ export function useSearchDonors(
   seekerLng: number,
   enabled: boolean,
 ) {
-  const { actor, isFetching } = useBackendActor();
-  return useQuery<DonorPublicView[]>({
-    queryKey: ["donors", "search", bloodType, seekerLat, seekerLng],
+  return useQuery({
+    queryKey: ["donors-search", bloodType],
+    enabled,
     queryFn: async () => {
-      if (!actor) return [];
-      return actor.searchDonors(bloodType, seekerLat, seekerLng);
+      let query = supabase.from("donors").select("*");
+
+      if (bloodType && bloodType !== "All") {
+        query = query.eq("blood_type", bloodType);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      return (data || []).map((d) => ({
+  id: d.id,
+  name: d.name,
+  address: d.address,
+  phone: d.phone,
+  bloodType: d.blood_type,
+  isAvailable: d.available,
+  lat: d.latitude,
+  lng: d.longitude,
+  distanceKm: 0,
+}));
     },
-    enabled: !!actor && !isFetching && enabled && bloodType !== undefined,
   });
 }
 
 export function useMyProfile() {
-  const { actor, isFetching } = useBackendActor();
-  return useQuery<DonorPublicView | null>({
-    queryKey: ["donor", "profile"],
+  return useQuery({
+    queryKey: ["my-profile"],
     queryFn: async () => {
-      if (!actor) return null;
-      return actor.getMyProfile();
-    },
-    enabled: !!actor && !isFetching,
-  });
-}
+      const { data, error } = await supabase
+        .from("donors")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
 
-export function useShops() {
-  const { actor, isFetching } = useBackendActor();
-  return useQuery<MedicalShop[]>({
-    queryKey: ["shops"],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getShops();
+      if (error) {
+        console.error(error);
+        return null;
+      }
+
+      return {
+        id: data.id,
+        name: data.name,
+        address: data.address,
+        phone: data.phone,
+        bloodType: data.blood_type,
+        isAvailable: data.available,
+        lat: data.latitude,
+        lng: data.longitude,
+      };
     },
-    enabled: !!actor && !isFetching,
   });
 }
 
 export function useRegisterDonor() {
-  const { actor } = useBackendActor();
-  const queryClient = useQueryClient();
-  return useMutation<
-    Result,
-    Error,
-    {
-      name: string;
-      address: string;
-      bloodType: string;
-      phone: string;
-      lat: number;
-      lng: number;
-    }
-  >({
-    mutationFn: async ({ name, address, bloodType, phone, lat, lng }) => {
-      if (!actor) throw new Error("Not connected");
-      return actor.registerDonor(name, address, bloodType, phone, lat, lng);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["donor", "profile"] });
-      queryClient.invalidateQueries({ queryKey: ["donors"] });
+  return useMutation({
+    mutationFn: async (form: any) => {
+      const { error } = await supabase
+        .from("donors")
+        .insert([
+          {
+            name: form.name,
+            phone: form.phone,
+            address: form.address,
+            blood_type: form.bloodType,
+            latitude: form.lat,
+            longitude: form.lng,
+            available: true,
+          },
+        ]);
+
+      if (error) throw error;
+
+      return {
+        __kind__: "ok",
+        ok: null,
+      };
     },
   });
 }
 
 export function useUpdateProfile() {
-  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
-  return useMutation<
-    Result,
-    Error,
-    { name: string; address: string; phone: string; lat: number; lng: number }
-  >({
-    mutationFn: async ({ name, address, phone, lat, lng }) => {
-      if (!actor) throw new Error("Not connected");
-      return actor.updateDonorProfile(name, address, phone, lat, lng);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["donor", "profile"] });
-      queryClient.invalidateQueries({ queryKey: ["donors"] });
-    },
+
+  return useMutation({
+    mutationFn: async (form: any) => {
+      const { error } = await supabase
+        .from("donors")
+        .update({
+          name: form.name,
+          address: form.address,
+          phone: form.phone,
+          latitude: form.lat,
+          longitude: form.lng,
+        })
+        .eq("id", form.id);
+
+      if (error) throw error;
+
+      return {
+  __kind__: "ok",
+  ok: null,
+};
+},
+
+onSuccess: () => {
+  queryClient.invalidateQueries({
+    queryKey: ["my-profile"],
   });
+
+  queryClient.invalidateQueries({
+    queryKey: ["donors"],
+  });
+},
+});
 }
 
 export function useLogDonation() {
-  const { actor } = useBackendActor();
-  const queryClient = useQueryClient();
-  return useMutation<Result, Error>({
-    mutationFn: async () => {
-      if (!actor) throw new Error("Not connected");
-      return actor.logDonation();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["donor", "profile"] });
-      queryClient.invalidateQueries({ queryKey: ["donors"] });
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("donors")
+        .update({
+          available: false,
+          last_donation: new Date().toISOString(),
+        })
+        .eq("id", id);
+
+      if (error) throw error;
+
+      return {
+        __kind__: "ok",
+        ok: null,
+      };
     },
   });
 }
 
 export function useAddShop() {
-  const { actor } = useBackendActor();
-  const queryClient = useQueryClient();
-  return useMutation<
-    Result,
-    Error,
-    {
-      name: string;
-      address: string;
-      phone: string;
-      website: string | null;
-      description: string;
-    }
-  >({
-    mutationFn: async ({ name, address, phone, website, description }) => {
-      if (!actor) throw new Error("Not connected");
-      return actor.addShop(name, address, phone, website, description);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["shops"] });
+  return useMutation({
+    mutationFn: async (shop: any) => {
+      const { error } = await supabase
+        .from("shops")
+        .insert([
+          {
+            name: shop.name,
+            description: shop.description,
+            address: shop.address,
+            phone: shop.phone,
+            website: shop.website,
+          },
+        ]);
+
+      if (error) throw error;
+
+      return {
+        __kind__: "ok",
+        ok: null,
+      };
     },
   });
 }
 
 export function useCheckAvailability() {
-  const { actor } = useBackendActor();
   const queryClient = useQueryClient();
-  return useMutation<void, Error>({
+
+  return useMutation({
     mutationFn: async () => {
-      if (!actor) throw new Error("Not connected");
-      return actor.checkAndUpdateAvailability();
+      const { data, error } = await supabase
+        .from("donors")
+        .select("*")
+        .eq("available", false);
+
+      if (error) throw error;
+
+      for (const donor of data || []) {
+        if (!donor.last_donation) continue;
+
+        const donationTime = new Date(
+          donor.last_donation
+        ).getTime();
+
+        const now = Date.now();
+
+        const fourMonths = 120 * 24 * 60 * 60 * 1000;
+
+if (now - donationTime >= fourMonths) {
+          await supabase
+            .from("donors")
+            .update({
+              available: true,
+            })
+            .eq("id", donor.id);
+        }
+      }
     },
+
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["donors"] });
-      queryClient.invalidateQueries({ queryKey: ["donor", "profile"] });
+      queryClient.invalidateQueries({
+        queryKey: ["donors"],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["my-profile"],
+      });
+    },
+  });
+}
+export function useShops() {
+  return useQuery({
+    queryKey: ["shops"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("shops")
+        .select("*");
+
+      if (error) throw error;
+
+      return data || [];
     },
   });
 }
