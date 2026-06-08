@@ -199,8 +199,8 @@ export function DonorRegisterPage() {
     }
 
     try {
-      const result =
-  await registerDonor.mutateAsync(form);
+      const result = 
+      await registerDonor.mutateAsync(form);
 
       if (result.__kind__ === "ok") {
         toast.success(
@@ -257,7 +257,7 @@ export function DonorRegisterPage() {
     );
   }
 
-  const isPending = registerDonor.isPending || updateProfile.isPending;
+  const isPending = registerDonor.isPending;
 
   return (
     <div className="mx-auto max-w-xl px-4 py-8" data-ocid="register.page">
