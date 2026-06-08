@@ -24,9 +24,7 @@ import { BloodTypeBadge } from "../components/BloodTypeBadge";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { useAuth } from "../hooks/useAuth";
 import {
-  useMyProfile,
   useRegisterDonor,
-  useUpdateProfile,
 } from "../hooks/useBackend";
 import { BLOOD_TYPES } from "../types";
 
@@ -159,10 +157,10 @@ function LocationSection({ lat, lng, onLocation }: LocationSectionProps) {
 export function DonorRegisterPage() {
   const navigate = useNavigate();
   const { isLoggedIn, isLoading: authLoading, login } = useAuth();
-  const { data: existingProfile, isLoading: profileLoading } = useMyProfile();
+  const existingProfile = null;
+  const profileLoading = false;
   const registerDonor = useRegisterDonor();
-  const updateProfile = useUpdateProfile();
-  const isEditing = !!existingProfile;
+  const isEditing = false;
 
   const [form, setForm] = useState({
     name: "",
@@ -201,15 +199,8 @@ export function DonorRegisterPage() {
     }
 
     try {
-      const result = isEditing
-        ? await updateProfile.mutateAsync({
-            name: form.name,
-            address: form.address,
-            phone: form.phone,
-            lat: form.lat,
-            lng: form.lng,
-          })
-        : await registerDonor.mutateAsync(form);
+      const result =
+  await registerDonor.mutateAsync(form);
 
       if (result.__kind__ === "ok") {
         toast.success(

@@ -61,33 +61,10 @@ export function useSearchDonors(
 }
 
 export function useMyProfile() {
-  return useQuery({
-    queryKey: ["my-profile"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("donors")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .single();
-
-      if (error) {
-        console.error(error);
-        return null;
-      }
-
-      return {
-        id: data.id,
-        name: data.name,
-        address: data.address,
-        phone: data.phone,
-        bloodType: data.blood_type,
-        isAvailable: data.available,
-        lat: data.latitude,
-        lng: data.longitude,
-      };
-    },
-  });
+  return {
+    data: null,
+    isLoading: false,
+  };
 }
 
 export function useRegisterDonor() {
