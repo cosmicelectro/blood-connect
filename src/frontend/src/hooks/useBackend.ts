@@ -35,7 +35,10 @@ export function useSearchDonors(
     queryKey: ["donors-search", bloodType],
     enabled,
     queryFn: async () => {
-      let query = supabase.from("donors").select("*");
+      let query = supabase
+  .from("donors")
+  .select("*")
+  .eq("available", true);
 
       if (bloodType && bloodType !== "All") {
         query = query.eq("blood_type", bloodType);
@@ -204,7 +207,7 @@ export function useCheckAvailability() {
       const { data, error } = await supabase
         .from("donors")
         .select("*")
-        .eq("available", false);
+        .eq("available", true);
 
       if (error) throw error;
 

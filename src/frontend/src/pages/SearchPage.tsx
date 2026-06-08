@@ -21,7 +21,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { DonorCard } from "../components/DonorCard";
 import { ErrorMessage } from "../components/ErrorMessage";
-import { useAllDonors, useCheckAvailability, useSearchDonors } from "../hooks/useBackend";
+import { useAllDonors, useCheckAvailability, useSearchDonors, useLogDonation } from "../hooks/useBackend";
 import type { BloodType, DonorPublicView } from "../types";
 import { BLOOD_TYPES } from "../types";
 
@@ -52,6 +52,7 @@ export function SearchPage() {
   });
   const [searchTriggered, setSearchTriggered] = useState(false);
   const checkAvailability = useCheckAvailability();
+  const logDonation = useLogDonation();
 
 useEffect(() => {
   const timer = setInterval(() => {
@@ -450,19 +451,36 @@ const hasLocation = locationState.status === "granted";
               data-ocid="search.donor_list"
             >
               {displayedDonors.map((donor, i) => (
-                <motion.li
-                  key={donor.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: Math.min(i * 0.05, 0.4) }}
-                >
-                  <DonorCard
-                    donor={donor}
-                    index={i}
-                    showDistance={searchTriggered && hasLocation}
-                  />
-                </motion.li>
-              ))}
+  <motion.li
+    key={donor.id}
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: Math.min(i * 0.05, 0.4) }}
+  >
+    <DonorCard
+      donor={donor}
+      index={i}
+      showDistance={searchTriggered && hasLocation}
+    />
+
+    <div className="mt-2 flex justify-end">
+      <Button
+        variant="destructive"
+        onClick={() => {
+          if (
+            confirm(
+              `Mark ${donor.name} as having donated blood today?`
+            )
+          ) {
+            logDonation.mutate(donor.id);
+          }
+        }}
+      >
+        Mark Donated
+      </Button>
+    </div>
+  </motion.li>
+))}
             </ul>
           )}
         </div>
