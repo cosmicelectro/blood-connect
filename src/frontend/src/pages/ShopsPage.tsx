@@ -9,53 +9,104 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ExternalLink, MapPin, Phone, Plus, ShoppingBag } from "lucide-react";
+import { ExternalLink, MapPin, Phone, Plus, ShoppingBag, Search, Tag, MessageSquare } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ErrorMessage } from "../components/ErrorMessage";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { useAddShop, useShops } from "../hooks/useBackend";
-import type { MedicalShop } from "../types";
+import { useAuth } from "../hooks/useAuth";
+import { useTranslate } from "../lib/translations";
+import { ChatDialog } from "../components/ChatDialog";
 
-function ShopCard({ shop, index }: { shop: MedicalShop; index: number }) {
+function ShopCard({ shop, index, onChat, isLoggedIn, currentUserId }: { 
+  shop: any; 
+  index: number; 
+  onChat: (id: string, name: string) => void;
+  isLoggedIn: boolean;
+  currentUserId?: string;
+}) {
+  const { language } = useAuth();
+  const t = useTranslate(language);
+
   return (
     <article
-      className="rounded-lg border border-border bg-card p-5 transition-smooth hover:shadow-md"
+      className="rounded-lg border border-border bg-card p-5 transition-smooth hover:shadow-md flex flex-col justify-between"
       data-ocid={`shop.item.${index + 1}`}
     >
-      <div className="mb-3 flex items-start justify-between gap-2">
-        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
-          <ShoppingBag className="h-5 w-5 text-primary" aria-hidden="true" />
+      <div>
+        <div className="mb-3 flex items-start justify-between gap-2">
+          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
+            <ShoppingBag className="h-5 w-5 text-primary" aria-hidden="true" />
+          </div>
+          {shop.website && (
+            <a
+              href={shop.website}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-xs text-primary transition-smooth hover:underline"
+              aria-label={`Visit ${shop.name} website`}
+            >
+              <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+              Website
+            </a>
+          )}
         </div>
-        {shop.website && (
-          <a
-            href={shop.website}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1 text-xs text-primary transition-smooth hover:underline"
-            aria-label={`Visit ${shop.name} website`}
-          >
-            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-            Website
-          </a>
-        )}
+        
+        <h3 className="heading-md mb-1">{shop.name}</h3>
+        <p className="body-sm mb-3 line-clamp-2 text-muted-foreground">{shop.description}</p>
+
+        {/* Product Catalog Display */}
+        <div className="my-4 border-t border-b border-border/50 py-3">
+          <div className="flex items-center gap-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+            <Tag className="h-3 w-3 text-primary" /> {t("productList")}
+          </div>
+          {shop.products && shop.products.length > 0 ? (
+            <div className="space-y-1.5 max-h-[140px] overflow-y-auto scrollbar-thin">
+              {shop.products.map((p: any, idx: number) => (
+                <div key={p.name + "-" + idx} className="flex justify-between items-center text-xs border-b border-border/30 pb-1 last:border-0 last:pb-0">
+                  <span className="font-medium truncate max-w-[170px]">{p.name}</span>
+                  <span className="font-bold text-primary font-mono">{p.price.toLocaleString()} BDT</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-xs text-muted-foreground italic text-center py-2">
+              {t("noProducts")}
+            </div>
+          )}
+        </div>
       </div>
-      <h3 className="heading-md mb-1">{shop.name}</h3>
-      <p className="body-sm mb-3 line-clamp-2">{shop.description}</p>
-      <div className="space-y-1.5 text-sm text-muted-foreground">
-        <div className="flex items-center gap-2">
-          <MapPin className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
-          <span className="truncate">{shop.address}</span>
+
+      <div className="space-y-3 border-t border-border/40 pt-3">
+        <div className="space-y-1.5 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <MapPin className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
+            <span className="truncate">{shop.address}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Phone className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
+            <a
+              href={`tel:${shop.phone}`}
+              className="transition-smooth hover:text-primary font-mono"
+            >
+              {shop.phone}
+            </a>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Phone className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
-          <a
-            href={`tel:${shop.phone}`}
-            className="transition-smooth hover:text-primary"
+
+        {/* Messaging button */}
+        {isLoggedIn && currentUserId !== shop.ownerId && (
+          <Button
+            onClick={() => onChat(shop.ownerId || "shopkeeper-1", shop.name)}
+            variant="outline"
+            size="sm"
+            className="w-full gap-1.5 text-xs font-semibold"
           >
-            {shop.phone}
-          </a>
-        </div>
+            <MessageSquare className="h-3.5 w-3.5" />
+            Contact Shop
+          </Button>
+        )}
       </div>
     </article>
   );
@@ -94,7 +145,7 @@ function AddShopDialog({
         description: "",
       });
     } else {
-      toast.error(result.err);
+      toast.error("Operation failed");
     }
   };
 
@@ -191,24 +242,56 @@ function AddShopDialog({
 export function ShopsPage() {
   const { data: shops, isLoading, error, refetch } = useShops();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  
+  // Messaging state
+  const [chatTarget, setChatTarget] = useState<{ id: string; name: string } | null>(null);
+
+  const { role, isLoggedIn, user, language } = useAuth();
+  const t = useTranslate(language);
+
+  const isShopkeeperOrAdmin = isLoggedIn && (role === "admin" || role === "shopkeeper");
+
+  const filteredShops = (shops || []).filter(
+    (s) =>
+      s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.products.some((p: any) => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8" data-ocid="shops.page">
-      <div className="mb-8 flex items-start justify-between gap-4">
+      <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="heading-xl mb-2">Medical Instrument Shops</h1>
-          <p className="body-sm">
-            Partner medical equipment and supply stores near you.
+          <h1 className="heading-xl mb-2">{t("medicalShopsTitle")}</h1>
+          <p className="body-sm text-muted-foreground">
+            {t("medicalShopsSub")}
           </p>
         </div>
-        <Button
-          onClick={() => setDialogOpen(true)}
-          className="flex-shrink-0 gap-2"
-          data-ocid="shops.add_shop_button"
-        >
-          <Plus className="h-4 w-4" aria-hidden="true" />
-          Add Shop
-        </Button>
+        {isShopkeeperOrAdmin && (
+          <Button
+            onClick={() => setDialogOpen(true)}
+            className="flex-shrink-0 gap-2"
+            data-ocid="shops.add_shop_button"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            {t("addShop")}
+          </Button>
+        )}
+      </div>
+
+      {/* Search Bar */}
+      <div className="mb-6 flex gap-2 max-w-md">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder={t("searchShopsPlaceholder")}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
       </div>
 
       {isLoading && (
@@ -224,7 +307,7 @@ export function ShopsPage() {
         />
       )}
 
-      {!isLoading && !error && (!shops || shops.length === 0) && (
+      {!isLoading && !error && filteredShops.length === 0 && (
         <div
           className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-muted/30 py-16 text-center"
           data-ocid="shops.empty_state"
@@ -233,26 +316,42 @@ export function ShopsPage() {
             className="h-10 w-10 text-muted-foreground"
             aria-hidden="true"
           />
-          <p className="heading-md">No shops listed yet</p>
+          <p className="heading-md">{t("noShops")}</p>
           <p className="body-sm max-w-sm">
-            Medical equipment and supply stores will appear here. Use the button
-            above to add a shop.
+            {t("noShopsDesc")}
           </p>
         </div>
       )}
 
-      {!isLoading && !error && shops && shops.length > 0 && (
+      {!isLoading && !error && filteredShops.length > 0 && (
         <div
-          className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+          className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
           data-ocid="shops.list"
         >
-          {shops.map((shop, i) => (
-            <ShopCard key={shop.id.toString()} shop={shop} index={i} />
+          {filteredShops.map((shop, i) => (
+            <ShopCard 
+              key={shop.id.toString()} 
+              shop={shop} 
+              index={i} 
+              onChat={(id, name) => setChatTarget({ id, name })}
+              isLoggedIn={isLoggedIn}
+              currentUserId={user?.id}
+            />
           ))}
         </div>
       )}
 
       <AddShopDialog open={dialogOpen} onClose={() => setDialogOpen(false)} />
+
+      {/* Chat Dialog for Shopkeepers */}
+      {chatTarget && (
+        <ChatDialog
+          isOpen={!!chatTarget}
+          onClose={() => setChatTarget(null)}
+          receiverId={chatTarget.id}
+          receiverName={chatTarget.name}
+        />
+      )}
     </div>
   );
 }

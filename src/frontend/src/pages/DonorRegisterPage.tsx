@@ -22,7 +22,6 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { BloodTypeBadge } from "../components/BloodTypeBadge";
 import { LoadingSpinner } from "../components/LoadingSpinner";
-import { useAuth } from "../hooks/useAuth";
 import {
   useRegisterDonor,
 } from "../hooks/useBackend";
@@ -156,9 +155,9 @@ function LocationSection({ lat, lng, onLocation }: LocationSectionProps) {
 
 export function DonorRegisterPage() {
   const navigate = useNavigate();
-  const { isLoggedIn, isLoading: authLoading, login } = useAuth();
-  const existingProfile = null;
+  const existingProfile: any = null;
   const profileLoading = false;
+  const authLoading = false;
   const registerDonor = useRegisterDonor();
   const isEditing = false;
 
@@ -210,7 +209,7 @@ export function DonorRegisterPage() {
         );
         navigate({ to: "/donor" });
       } else {
-        toast.error(result.err);
+        toast.error("Operation failed");
       }
     } catch {
       toast.error("Something went wrong. Please try again.");
@@ -225,34 +224,6 @@ export function DonorRegisterPage() {
         data-ocid="register.loading_state"
       >
         <LoadingSpinner label="Loading…" />
-      </div>
-    );
-  }
-
-  // ── Auth guard ──
-  if (!isLoggedIn) {
-    return (
-      <div
-        className="mx-auto max-w-md px-4 py-24 text-center"
-        data-ocid="register.unauthenticated_state"
-      >
-        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10">
-          <User className="h-10 w-10 text-primary" aria-hidden />
-        </div>
-        <h1 className="heading-xl mb-3">Login Required</h1>
-        <p className="body-sm mb-8">
-          You must be logged in with Internet Identity to register as a blood
-          donor.
-        </p>
-        <Button
-          onClick={login}
-          size="lg"
-          className="gap-2"
-          data-ocid="register.login_button"
-        >
-          <Droplets className="h-5 w-5" aria-hidden />
-          Login with Internet Identity
-        </Button>
       </div>
     );
   }

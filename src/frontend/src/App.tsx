@@ -10,6 +10,9 @@ import { DonorDashboard } from "./pages/DonorDashboard";
 import { DonorRegisterPage } from "./pages/DonorRegisterPage";
 import { SearchPage } from "./pages/SearchPage";
 import { ShopsPage } from "./pages/ShopsPage";
+import { AuthPage } from "./pages/AuthPage";
+import { AdminDashboard } from "./pages/AdminDashboard";
+import { ShopkeeperDashboard } from "./pages/ShopkeeperDashboard";
 
 const rootRoute = createRootRoute({
   component: () => (
@@ -43,11 +46,32 @@ const donorRegisterRoute = createRoute({
   component: DonorRegisterPage,
 });
 
+const authRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/auth",
+  component: AuthPage,
+});
+
+const adminRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/admin",
+  component: AdminDashboard,
+});
+
+const shopkeeperRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/shopkeeper",
+  component: ShopkeeperDashboard,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   shopsRoute,
   donorRoute,
   donorRegisterRoute,
+  authRoute,
+  adminRoute,
+  shopkeeperRoute,
 ]);
 
 const router = createRouter({ routeTree });

@@ -15,6 +15,8 @@ import {
   Save,
   User,
   XCircle,
+  MessageSquare,
+  Send
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -27,9 +29,10 @@ import {
   useLogDonation,
   useMyProfile,
   useUpdateProfile,
+  useMessages,
+  useSendMessage
 } from "../hooks/useBackend";
-
-// ─── Sub-components ──────────────────────────────────────────────────────────
+import { useTranslate } from "../lib/translations";
 
 function InfoRow({
   icon,
@@ -61,8 +64,6 @@ function DonorAvatar({ name }: { name: string }) {
   );
 }
 
-// ─── Edit Profile Panel ───────────────────────────────────────────────────────
-
 interface EditProfilePanelProps {
   initialId: string;
   initialName: string;
@@ -84,13 +85,13 @@ function EditProfilePanel({
 }: EditProfilePanelProps) {
   const updateProfile = useUpdateProfile();
   const [form, setForm] = useState({
-  id: initialId,
-  name: initialName,
-  address: initialAddress,
-  phone: initialPhone,
-  lat: initialLat,
-  lng: initialLng,
-});
+    id: initialId,
+    name: initialName,
+    address: initialAddress,
+    phone: initialPhone,
+    lat: initialLat,
+    lng: initialLng,
+  });
   const [gettingLoc, setGettingLoc] = useState(false);
 
   const set = (key: string, value: string | number) =>
@@ -128,7 +129,7 @@ function EditProfilePanel({
         toast.success("Profile updated successfully!");
         onCancel();
       } else {
-        toast.error(result.err);
+        toast.error("Operation failed");
       }
     } catch {
       toast.error("Failed to update profile.");
@@ -198,136 +199,146 @@ function EditProfilePanel({
             )}
             {gettingLoc ? "Detecting…" : "Update Location"}
           </Button>
-          {(form.lat !== 0 || form.lng !== 0) && (
-            <span className="text-sm text-muted-foreground">
-              {form.lat.toFixed(4)}, {form.lng.toFixed(4)}
-            </span>
-          )}
+
+          <span className="font-mono text-xs text-muted-foreground">
+            {form.lat.toFixed(4)}, {form.lng.toFixed(4)}
+          </span>
         </div>
       </div>
 
-      <div className="flex gap-3 pt-2">
-        <Button
-          type="submit"
-          size="sm"
-          disabled={updateProfile.isPending}
-          className="gap-2"
-          data-ocid="donor.edit_save_button"
-        >
-          {updateProfile.isPending ? (
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-          ) : (
-            <Save className="h-4 w-4" aria-hidden />
-          )}
-          {updateProfile.isPending ? "Saving…" : "Save Changes"}
-        </Button>
+      <div className="flex justify-end gap-2 pt-2">
         <Button
           type="button"
-          variant="ghost"
-          size="sm"
+          variant="outline"
           onClick={onCancel}
           data-ocid="donor.edit_cancel_button"
         >
           Cancel
+        </Button>
+        <Button type="submit" className="gap-2" data-ocid="donor.edit_save_button">
+          <Save className="h-4 w-4" aria-hidden />
+          Save Changes
         </Button>
       </div>
     </form>
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
-
 export function DonorDashboard() {
-  const { isLoggedIn, isLoading: authLoading, login } = useAuth();
-  const { data: profile, isLoading: profileLoading, error } = useMyProfile();
-  const logDonation = useLogDonation();
-  const [donating, setDonating] = useState(false);
+  const { language } = useAuth();
+  const t = useTranslate(language);
+
+  const { data: profile, isLoading, error, refetch } = useMyProfile();
   const [isEditing, setIsEditing] = useState(false);
   const [confirmDonate, setConfirmDonate] = useState(false);
+  const [donating, setDonating] = useState(false);
 
-  // Reset editing state when profile refreshes after save
-  useEffect(() => {
-    if (!profileLoading) setIsEditing(false);
-  }, [profileLoading]);
+  const logDonation = useLogDonation();
 
-  // ── Auth guard ──
-  if (authLoading) {
+  // Chat Inbox states for Donor
+  const { data: messages } = useMessages(profile?.id || "");
+  const sendMessage = useSendMessage();
+  const [selectedThreadSenderId, setSelectedThreadSenderId] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
+
+  const [donationDateOption, setDonationDateOption] = useState<string>("today");
+
+  const handleLogDonation = async () => {
+    if (!confirmDonate) {
+      setConfirmDonate(true);
+      return;
+    }
+    setDonating(true);
+    setConfirmDonate(false);
+
+    let finalTimestamp = Date.now();
+    if (donationDateOption === "1month") {
+      finalTimestamp -= 30 * 24 * 60 * 60 * 1000;
+    } else if (donationDateOption === "3months") {
+      finalTimestamp -= 90 * 24 * 60 * 60 * 1000;
+    } else if (donationDateOption === "4months") {
+      finalTimestamp -= 121 * 24 * 60 * 60 * 1000;
+    }
+
+    try {
+      const result = await logDonation.mutateAsync({ id: profile.id, date: finalTimestamp });
+      if (result.__kind__ === "ok") {
+        toast.success(
+          donationDateOption === "4months"
+            ? "Donation logged 4 months ago! Your status remains Available as the recovery period has elapsed."
+            : "Donation recorded! Your status is now unavailable. It will auto-reset in 4 months.",
+        );
+      } else {
+        toast.error("Operation failed");
+      }
+    } catch {
+      toast.error("Failed to log donation. Please try again.");
+    } finally {
+      setDonating(false);
+    }
+  };
+
+  const handleSendReply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!replyText.trim() || !selectedThreadSenderId) return;
+
+    // Find the sender's name from messages list
+    const firstMsg = (messages || []).find((m) => m.senderId === selectedThreadSenderId);
+    const senderName = firstMsg ? firstMsg.senderName : "User Seeker";
+
+    await sendMessage.mutateAsync({
+      senderId: profile.id,
+      senderName: profile.name,
+      receiverId: selectedThreadSenderId,
+      text: replyText.trim(),
+    });
+    setReplyText("");
+  };
+
+  // Group messages by sender id
+  const chatThreadsMap = new Map();
+  (messages || []).forEach((m) => {
+    const threadPartnerId = m.senderId === profile?.id ? m.receiverId : m.senderId;
+    if (!chatThreadsMap.has(threadPartnerId)) {
+      chatThreadsMap.set(threadPartnerId, {
+        partnerName: m.senderId === profile?.id ? "User Seeker" : m.senderName,
+        messages: [],
+      });
+    }
+    chatThreadsMap.get(threadPartnerId).messages.push(m);
+  });
+
+  const chatThreads = Array.from(chatThreadsMap.entries());
+
+  if (isLoading) {
     return (
-      <div
-        className="flex min-h-[60vh] items-center justify-center"
-        data-ocid="donor.loading_state"
-      >
-        <LoadingSpinner label="Checking authentication…" />
+      <div className="py-24" data-ocid="donor.loading_state">
+        <LoadingSpinner label="Loading donor profile…" />
       </div>
     );
   }
 
-  if (!isLoggedIn) {
+  if (error && !isLoading) {
     return (
-      <div
-        className="mx-auto max-w-md px-4 py-24 text-center"
-        data-ocid="donor.unauthenticated_state"
-      >
-        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10">
-          <User className="h-10 w-10 text-primary" aria-hidden />
-        </div>
-        <h1 className="heading-xl mb-3">Donor Login Required</h1>
-        <p className="body-sm mb-8">
-          Log in with Internet Identity to access your donor dashboard, manage
-          your profile, and record blood donations.
-        </p>
-        <Button
-          onClick={login}
-          size="lg"
-          className="gap-2"
-          data-ocid="donor.login_button"
-        >
-          <Droplets className="h-5 w-5" aria-hidden />
-          Login as Donor
-        </Button>
+      <div className="mx-auto max-w-md px-4 py-16">
+        <ErrorMessage
+          message="Failed to load donor profile. Please check connection."
+          onRetry={() => refetch()}
+        />
       </div>
     );
   }
 
-  // ── Profile loading ──
-  if (profileLoading) {
+  if (!profile && !isLoading) {
     return (
-      <div
-        className="flex min-h-[60vh] items-center justify-center"
-        data-ocid="donor.profile_loading_state"
-      >
-        <LoadingSpinner label="Loading your profile…" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div
-        className="mx-auto max-w-md px-4 py-16"
-        data-ocid="donor.error_state"
-      >
-        <ErrorMessage message="Failed to load your donor profile. Please try again." />
-      </div>
-    );
-  }
-
-  // ── Not registered ──
-  if (!profile) {
-    return (
-      <div
-        className="mx-auto max-w-md px-4 py-24 text-center"
-        data-ocid="donor.unregistered_state"
-      >
-        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10">
-          <Heart className="h-10 w-10 text-primary" aria-hidden />
+      <div className="mx-auto max-w-md px-4 py-20 text-center" data-ocid="donor.unregistered_state">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+          <Droplets className="h-8 w-8 text-primary" aria-hidden />
         </div>
         <h1 className="heading-xl mb-3">Become a Blood Donor</h1>
-        <p className="body-sm mb-2">
-          You're not registered as a donor yet. Join our network to help people
-          in need find life-saving blood near them.
+        <p className="body-sm mb-8">
+          You're not registered as a donor yet. Join our network to help people in need find life-saving blood near them.
         </p>
-        <p className="body-sm mb-8">Registration takes less than 2 minutes.</p>
         <Link to="/donor/register">
           <Button size="lg" className="gap-2" data-ocid="donor.register_button">
             <Droplets className="h-5 w-5" aria-hidden />
@@ -338,259 +349,236 @@ export function DonorDashboard() {
     );
   }
 
-  // ── Log donation handler ──
-  const handleLogDonation = async () => {
-    if (!confirmDonate) {
-      setConfirmDonate(true);
-      return;
-    }
-    setDonating(true);
-    setConfirmDonate(false);
-    try {
-      const result = await logDonation.mutateAsync(profile.id);
-      if (result.__kind__ === "ok") {
-        toast.success(
-          "Donation recorded! Your status is now unavailable. It will auto-reset in 4 months.",
-        );
-      } else {
-        toast.error(result.err);
-      }
-    } catch {
-      toast.error("Failed to log donation. Please try again.");
-    } finally {
-      setDonating(false);
-    }
-  };
+  const selectedThreadMessages = selectedThreadSenderId 
+    ? (messages || []).filter(
+        (m) =>
+          (m.senderId === profile.id && m.receiverId === selectedThreadSenderId) ||
+          (m.senderId === selectedThreadSenderId && m.receiverId === profile.id)
+      )
+    : [];
 
-  // ── Dashboard ──
   return (
-    <div
-      className="mx-auto max-w-3xl px-4 py-8"
-      data-ocid="donor.dashboard_page"
-    >
-      {/* Page header */}
-      <div className="mb-8">
-        <h1 className="heading-xl mb-1">Donor Dashboard</h1>
-        <p className="body-sm">
-          Manage your donor profile and track your donations.
+    <div className="mx-auto max-w-6xl px-4 py-8 space-y-6" data-ocid="donor.dashboard_page">
+      <div className="mb-6 pb-4 border-b border-border">
+        <h1 className="heading-xl mb-1">{t("donorDashboard")}</h1>
+        <p className="body-sm text-muted-foreground">
+          Manage your donor profile, check status metrics, and read customer messages.
         </p>
       </div>
 
-      {/* Profile card */}
-      <section
-        className="mb-5 rounded-xl border border-border bg-card p-6 shadow-sm"
-        data-ocid="donor.profile_card"
-      >
-        {/* Avatar + name + badges */}
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-          <div className="relative flex-shrink-0">
-            <DonorAvatar name={profile.name} />
-            <span
-              className="absolute -bottom-1 -right-1"
-              aria-label={profile.isAvailable ? "Available" : "Unavailable"}
-            >
-              <StatusBadge isAvailable={profile.isAvailable} />
-            </span>
-          </div>
-
-          <div className="min-w-0 flex-1">
-            <div className="mb-2 flex flex-wrap items-center gap-3">
-              <h2 className="heading-lg">{profile.name}</h2>
-              <BloodTypeBadge bloodType={profile.bloodType} size="lg" />
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <StatusBadge isAvailable={profile.isAvailable} showLabel />
-            </div>
-          </div>
-        </div>
-
-        <Separator className="my-5" />
-
-        {/* Info rows */}
-        <div className="divide-y divide-border">
-          <InfoRow
-            icon={<MapPin className="h-4 w-4" />}
-            label="Address"
-            value={profile.address}
-          />
-          <InfoRow
-            icon={<Phone className="h-4 w-4" />}
-            label="Phone"
-            value={profile.phone}
-          />
-          <InfoRow
-            icon={<Droplets className="h-4 w-4" />}
-            label="Blood Type"
-            value={profile.bloodType}
-          />
-        </div>
-      </section>
-
-      {/* Donation section */}
-      <section
-        className="mb-5 rounded-xl border border-border bg-card p-6 shadow-sm"
-        data-ocid="donor.donation_section"
-      >
-        <div className="mb-4 flex items-center gap-2">
-          <Heart className="h-5 w-5 text-primary" aria-hidden />
-          <h2 className="heading-md">Donation Status</h2>
-        </div>
-
-        {profile.isAvailable ? (
-          <div className="space-y-4">
-            <div
-              className="flex items-start gap-3 rounded-lg border border-accent/30 bg-accent/10 p-4"
-              data-ocid="donor.available_notice"
-            >
-              <CheckCircle2
-                className="mt-0.5 h-5 w-5 flex-shrink-0 text-accent"
-                aria-hidden
-              />
+      <div className="grid gap-6 md:grid-cols-3">
+        {/* Left Side: Profile info details */}
+        <div className="space-y-6 md:col-span-1">
+          <section className="rounded-xl border border-border bg-card p-6 shadow-sm">
+            <div className="flex flex-col gap-4 items-center text-center">
+              <div className="relative">
+                <DonorAvatar name={profile.name} />
+                <span className="absolute -bottom-1 -right-1">
+                  <StatusBadge isAvailable={profile.isAvailable} />
+                </span>
+              </div>
               <div>
-                <p className="font-medium text-foreground">
-                  You're available to donate
-                </p>
-                <p className="mt-0.5 text-sm text-muted-foreground">
-                  Your profile is visible to people searching for{" "}
-                  <span className="font-semibold text-foreground">
-                    {profile.bloodType}
-                  </span>{" "}
-                  blood.
-                </p>
+                <h2 className="heading-lg mb-1">{profile.name}</h2>
+                <div className="flex gap-2 justify-center items-center">
+                  <BloodTypeBadge bloodType={profile.bloodType} size="md" />
+                  <span className="text-[10px] font-bold px-2 py-0.5 bg-primary/10 text-primary rounded-full uppercase">
+                    Level: {profile.donationCount >= 5 ? t("levelHero") : profile.donationCount >= 3 ? t("levelChampion") : t("levelLifesaver")}
+                  </span>
+                </div>
               </div>
             </div>
 
-            <div>
-              <p className="body-sm mb-4">
-                Donated today? Record it below. Your status will be set to
-                unavailable and will automatically reset after 4 months.
-              </p>
+            <Separator className="my-5" />
 
-              {confirmDonate ? (
-                <div className="flex flex-wrap items-center gap-3">
-                  <span className="text-sm font-medium text-foreground">
-                    Confirm you donated today?
-                  </span>
-                  <Button
-                    size="sm"
-                    onClick={handleLogDonation}
-                    disabled={donating}
-                    className="gap-2"
-                    data-ocid="donor.confirm_donation_button"
-                  >
-                    {donating ? (
-                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                    ) : (
-                      <CheckCircle2 className="h-4 w-4" aria-hidden />
-                    )}
-                    Yes, Confirm
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setConfirmDonate(false)}
-                    data-ocid="donor.cancel_donation_button"
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              ) : (
-                <Button
-                  onClick={handleLogDonation}
-                  disabled={donating}
-                  className="gap-2"
-                  data-ocid="donor.log_donation_button"
-                >
-                  <Heart className="h-4 w-4" aria-hidden />I Donated Today
+            <div className="divide-y divide-border/60 text-sm">
+              <InfoRow icon={<MapPin className="h-4 w-4" />} label="Address" value={profile.address} />
+              <InfoRow icon={<Phone className="h-4 w-4" />} label="Phone" value={profile.phone} />
+              <div className="flex justify-between py-3">
+                <span className="font-semibold text-muted-foreground">Total Donations:</span>
+                <span className="font-bold text-primary font-mono">{profile.donationCount} Times</span>
+              </div>
+            </div>
+          </section>
+
+          {/* Update profile section */}
+          <section className="rounded-xl border border-border bg-card p-6 shadow-sm">
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <h2 className="heading-md flex items-center gap-2">
+                <User className="h-5 w-5 text-primary" /> Edit Info
+              </h2>
+              {!isEditing && (
+                <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                  Edit
                 </Button>
               )}
             </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div
-              className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4"
-              data-ocid="donor.unavailable_notice"
-            >
-              <XCircle
-                className="mt-0.5 h-5 w-5 flex-shrink-0 text-destructive"
-                aria-hidden
+
+            {isEditing ? (
+              <EditProfilePanel
+                initialId={profile.id}
+                initialName={profile.name}
+                initialAddress={profile.address}
+                initialPhone={profile.phone}
+                initialLat={profile.lat}
+                initialLng={profile.lng}
+                onCancel={() => setIsEditing(false)}
               />
-              <div>
-                <p className="font-medium text-foreground">
-                  Currently unavailable
-                </p>
-                <p className="mt-0.5 text-sm text-muted-foreground">
-                  You recently donated. Your profile will automatically become
-                  available again 4 months after your last donation.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Clock
-                className="h-4 w-4 flex-shrink-0 text-primary"
-                aria-hidden
-              />
-              <span>Status resets automatically — no action needed.</span>
-            </div>
-
-            <Button
-              disabled
-              className="gap-2 opacity-60"
-              data-ocid="donor.log_donation_button"
-            >
-              <Heart className="h-4 w-4" aria-hidden />I Donated Today
-            </Button>
-            <p className="text-xs text-muted-foreground">
-              The donate button is disabled while you're unavailable.
-            </p>
-          </div>
-        )}
-      </section>
-
-      {/* Update profile section */}
-      <section
-        className="rounded-xl border border-border bg-card p-6 shadow-sm"
-        data-ocid="donor.edit_profile_section"
-      >
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <User className="h-5 w-5 text-primary" aria-hidden />
-            <h2 className="heading-md">Update Profile</h2>
-          </div>
-          {!isEditing && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2"
-              onClick={() => setIsEditing(true)}
-              data-ocid="donor.edit_profile_button"
-            >
-              <Calendar className="h-4 w-4" aria-hidden />
-              Edit
-            </Button>
-          )}
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Update details to keep your search coordinates and contact information fresh.
+              </p>
+            )}
+          </section>
         </div>
 
-        {isEditing ? (
-          <EditProfilePanel
-  initialId={profile.id}
-  initialName={profile.name}
-  initialAddress={profile.address}
-  initialPhone={profile.phone}
-  initialLat={profile.lat}
-  initialLng={profile.lng}
-  onCancel={() => setIsEditing(false)}
-/>
-        ) : (
-          <p className="body-sm">
-            Click <strong>Edit</strong> to update your name, address, phone
-            number, or location. Blood type cannot be changed after
-            registration.
-          </p>
-        )}
-      </section>
+        {/* Right Side: Donation logging & Chat message box */}
+        <div className="md:col-span-2 space-y-6">
+          
+          {/* Donation section */}
+          <section className="rounded-xl border border-border bg-card p-6 shadow-sm">
+            <div className="mb-4 flex items-center gap-2">
+              <Heart className="h-5 w-5 text-primary" />
+              <h2 className="heading-md">Log a Donation & Availability Check</h2>
+            </div>
+
+            {profile.isAvailable ? (
+              <div className="space-y-4">
+                <div className="flex items-start gap-3 rounded-lg border border-accent/30 bg-accent/10 p-4">
+                  <CheckCircle2 className="mt-0.5 h-5 w-5 text-accent flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-foreground">You are available to donate</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      Your blood type {profile.bloodType} is visible to seekers.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-muted/40 p-4 rounded-lg space-y-3">
+                  <Label htmlFor="donation-date-select" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    When did you donate?
+                  </Label>
+                  <select
+                    id="donation-date-select"
+                    className="w-full border border-border bg-card p-2 rounded-md text-sm outline-none"
+                    value={donationDateOption}
+                    onChange={(e) => setDonationDateOption(e.target.value)}
+                  >
+                    <option value="today">Today (Marks as Unavailable)</option>
+                    <option value="1month">1 Month Ago (Marks as Unavailable)</option>
+                    <option value="3months">3 Months Ago (Marks as Unavailable)</option>
+                    <option value="4months">4 Months Ago (Stays Available - Eligibility Met)</option>
+                  </select>
+
+                  {confirmDonate ? (
+                    <div className="flex flex-wrap items-center gap-3 pt-2">
+                      <span className="text-xs font-medium">Confirm logging donation?</span>
+                      <Button size="sm" onClick={handleLogDonation} disabled={donating}>
+                        Confirm
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setConfirmDonate(false)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button onClick={handleLogDonation} disabled={donating} className="gap-2 mt-2 w-full sm:w-auto">
+                      <Heart className="h-4 w-4" /> Log Donation
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4">
+                  <XCircle className="mt-0.5 h-5 w-5 text-destructive flex-shrink-0" />
+                  <div>
+                    <p className="font-medium">Currently unavailable</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      You recently logged a donation. Your profile will automatically become available again after the 4-month recovery period (120 days).
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Clock className="h-4 w-4 text-primary" />
+                  <span>Recovery time check updates automatically based on your last logged date.</span>
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* Inbox Chat Panel */}
+          <section className="rounded-xl border border-border bg-card p-6 shadow-sm space-y-4">
+            <h2 className="text-lg font-bold font-display flex items-center gap-2 border-b border-border pb-3">
+              <MessageSquare className="h-5 w-5 text-primary" />
+              {t("inbox")}
+            </h2>
+
+            {chatThreads.length === 0 ? (
+              <div className="text-center py-10 text-xs text-muted-foreground italic">
+                No messages received from seekers yet.
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-3">
+                {/* Thread partner list */}
+                <div className="space-y-1 sm:col-span-1 border-r border-border pr-3 h-64 overflow-y-auto">
+                  {chatThreads.map(([partnerId, data]: any) => (
+                    <button
+                      key={partnerId}
+                      onClick={() => setSelectedThreadSenderId(partnerId)}
+                      className={`w-full text-left p-2 rounded text-xs font-semibold truncate ${
+                        selectedThreadSenderId === partnerId ? "bg-primary/10 text-primary" : "hover:bg-muted text-foreground"
+                      }`}
+                    >
+                      {data.partnerName}
+                      <span className="block text-[9px] font-normal text-muted-foreground">
+                        {data.messages.length} Messages
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Selected Thread view */}
+                <div className="sm:col-span-2 flex flex-col justify-between h-64">
+                  {selectedThreadSenderId ? (
+                    <>
+                      <div className="flex-1 overflow-y-auto space-y-2 p-2 bg-muted/20 rounded-lg">
+                        {selectedThreadMessages.map((msg) => {
+                          const isMe = msg.senderId === profile.id;
+                          return (
+                            <div key={msg.id} className={`max-w-[85%] ${isMe ? "ml-auto text-right" : "mr-auto text-left"}`}>
+                              <div className={`p-2 rounded text-xs inline-block font-medium ${
+                                isMe ? "bg-primary text-primary-foreground" : "bg-card text-foreground border border-border"
+                              }`}>
+                                {msg.text}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <form onSubmit={handleSendReply} className="flex gap-2 pt-2">
+                        <Input
+                          placeholder="Type reply..."
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          className="flex-1 text-xs h-8"
+                        />
+                        <Button type="submit" size="icon" className="h-8 w-8">
+                          <Send className="h-3.5 w-3.5" />
+                        </Button>
+                      </form>
+                    </>
+                  ) : (
+                    <div className="text-center text-xs text-muted-foreground py-24 italic">
+                      Select a conversation on the left to read messages.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </section>
+
+        </div>
+      </div>
     </div>
   );
 }
