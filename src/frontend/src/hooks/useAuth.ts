@@ -34,14 +34,28 @@ export function useAuth() {
     return user;
   };
 
-  const registerNewProfile = (email: string, name: string, role: "donor" | "shopkeeper" | "viewer", password?: string) => {
+  const registerNewProfile = (
+    email: string,
+    name: string,
+    role: "donor" | "shopkeeper" | "viewer",
+    password?: string,
+    locationData?: {
+      division?: string;
+      district?: string;
+      subDistrict?: string;
+      area?: string;
+      lat?: number;
+      lng?: number;
+    }
+  ) => {
     const existing = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
     if (existing) {
       throw new Error("Email already registered. Please login instead.");
     }
     const newUser = registerUser(email, name, role, password);
+    // Location data is currently unused; can be stored in donor profile later.
     // Do not setCurrentUser here since they are unverified
-    // setCurrentUser(newUser); 
+    // setCurrentUser(newUser);
     return newUser;
   };
 

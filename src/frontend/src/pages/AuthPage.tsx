@@ -27,8 +27,37 @@ export function AuthPage() {
   });
   const [oauthLoading, setOauthLoading] = useState(false);
   
-  const [verificationUser, setVerificationUser] = useState<any>(null);
+  const [division, setDivision] = useState("");
+  const [district, setDistrict] = useState("");
+  const [subDistrict, setSubDistrict] = useState("");
+  const [area, setArea] = useState("");
+  const [lat, setLat] = useState<number | null>(null);
+  const [lng, setLng] = useState<number | null>(null);
+  const [detectingLocation, setDetectingLocation] = useState(false);
+  // Verification flow state
+  const [verificationUser, setVerificationUser] = useState(null as any);
   const [verificationCode, setVerificationCode] = useState("");
+
+  const detectLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation not supported.");
+      return;
+    }
+    setDetectingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLat(pos.coords.latitude);
+        setLng(pos.coords.longitude);
+        toast.success("Location detected!");
+        setDetectingLocation(false);
+      },
+      () => {
+        toast.error("Failed to get location. Allow permission.");
+        setDetectingLocation(false);
+      },
+      { timeout: 10000 }
+    );
+  };
   const [generatedCode, setGeneratedCode] = useState("");
 
   const handleOAuthClick = (provider: "google" | "facebook") => {
@@ -55,7 +84,14 @@ export function AuthPage() {
           toast.error("Passwords do not match.");
           return;
         }
-        const userObj = registerNewProfile(email, name || email.split("@")[0], role, password);
+        const userObj = registerNewProfile(email, name || email.split("@")[0], role, password, {
+          division,
+          district,
+          subDistrict,
+          area,
+          lat: lat ?? undefined,
+          lng: lng ?? undefined,
+        });
         
         // Generate a random 6-digit code
         const code = Math.floor(100000 + Math.random() * 900000).toString();

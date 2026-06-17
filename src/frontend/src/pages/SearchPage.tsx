@@ -123,6 +123,8 @@ export function SearchPage() {
           lng: pos.coords.longitude,
         });
         toast.success(language === "en" ? "Location locked successfully!" : "অবস্থান সফলভাবে লক করা হয়েছে!");
+        setSearchTriggered(true);
+        refetchSearch();
       },
       () => {
         setLocationState({
@@ -136,9 +138,7 @@ export function SearchPage() {
 
   function handleSearch() {
     setSearchTriggered(true);
-    if (hasLocation) {
-      refetchSearch();
-    }
+    refetchSearch();
   }
 
   function handleReset() {
@@ -211,36 +211,38 @@ export function SearchPage() {
                 ))}
               </select>
 
-              <div className="space-y-2">
-                <input
-                  type="text"
-                  placeholder="Division"
-                  className="w-full border border-border bg-card p-2 rounded-md text-sm outline-none"
-                  value={division}
-                  onChange={(e) => setDivision(e.target.value)}
-                />
-                <input
-                  type="text"
-                  placeholder="District"
-                  className="w-full border border-border bg-card p-2 rounded-md text-sm outline-none"
-                  value={district}
-                  onChange={(e) => setDistrict(e.target.value)}
-                />
-                <input
-                  type="text"
-                  placeholder="Sub-district / Upazila"
-                  className="w-full border border-border bg-card p-2 rounded-md text-sm outline-none"
-                  value={subDistrict}
-                  onChange={(e) => setSubDistrict(e.target.value)}
-                />
-                <input
-                  type="text"
-                  placeholder="Area / Ward"
-                  className="w-full border border-border bg-card p-2 rounded-md text-sm outline-none"
-                  value={area}
-                  onChange={(e) => setArea(e.target.value)}
-                />
-              </div>
+              {!hasLocation && (
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    placeholder="Division"
+                    className="w-full border border-border bg-card p-2 rounded-md text-sm outline-none"
+                    value={division}
+                    onChange={(e) => setDivision(e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    placeholder="District"
+                    className="w-full border border-border bg-card p-2 rounded-md text-sm outline-none"
+                    value={district}
+                    onChange={(e) => setDistrict(e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Sub-district / Upazila"
+                    className="w-full border border-border bg-card p-2 rounded-md text-sm outline-none"
+                    value={subDistrict}
+                    onChange={(e) => setSubDistrict(e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Area / Ward"
+                    className="w-full border border-border bg-card p-2 rounded-md text-sm outline-none"
+                    value={area}
+                    onChange={(e) => setArea(e.target.value)}
+                  />
+                </div>
+              )}
 
               <Button
                 variant="outline"
