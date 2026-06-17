@@ -1,7 +1,7 @@
 import { Droplets, Shield, Store, User } from "lucide-react";
 import React from "react";
 
-export type Role = "donor" | "shopkeeper" | "admin" | "user";
+export type Role = "donor" | "shopkeeper" | "admin" | "user" | "viewer";
 
 /**
  * RoleIcon renders a distinctive icon for each user role.

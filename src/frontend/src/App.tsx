@@ -9,7 +9,7 @@ import {
 import { useEffect } from "react";
 import { Layout } from "./components/Layout";
 import { useAuth } from "./hooks/useAuth";
-import { useLocalDb } from "./hooks/useLocalDb";
+import { useLocalDb, syncFromSupabase } from "./hooks/useLocalDb";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { AuthPage } from "./pages/AuthPage";
 import { ChatPage } from "./pages/ChatPage";
@@ -133,6 +133,18 @@ export default function App() {
       resetStore();
     }
   }, [resetStore]);
+
+  useEffect(() => {
+    // Initial sync from Supabase
+    syncFromSupabase();
+
+    // Poll Supabase every 5 seconds for updates
+    const interval = setInterval(() => {
+      syncFromSupabase();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   return <RouterProvider router={router} />;
 }

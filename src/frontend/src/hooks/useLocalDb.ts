@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { supabase } from "../lib/supabase";
 
 export interface Product {
   name: string;
@@ -397,3 +398,79 @@ export const useLocalDb = create<LocalDbState>()(
     },
   ),
 );
+
+let isSyncingToSupabase = false;
+let isSyncingFromSupabase = false;
+let lastSyncedDbString = "";
+
+export const syncToSupabase = async (dbPayload: any) => {
+  if (isSyncingToSupabase) return;
+  isSyncingToSupabase = true;
+  try {
+    const dbString = JSON.stringify(dbPayload);
+    lastSyncedDbString = dbString;
+
+    await supabase
+      .from("shops")
+      .update({
+        description: dbString,
+      })
+      .eq("name", "global-state");
+  } catch (error) {
+    console.error("Failed to sync to Supabase:", error);
+  } finally {
+    isSyncingToSupabase = false;
+  }
+};
+
+export const syncFromSupabase = async () => {
+  if (isSyncingFromSupabase || isSyncingToSupabase) return;
+  isSyncingFromSupabase = true;
+  try {
+    const { data, error } = await supabase
+      .from("shops")
+      .select("description")
+      .eq("name", "global-state")
+      .maybeSingle();
+
+    if (error) throw error;
+    if (data && data.description) {
+      const dbString = data.description;
+      if (dbString !== lastSyncedDbString) {
+        lastSyncedDbString = dbString;
+        const parsed = JSON.parse(dbString);
+        useLocalDb.setState({
+          users: parsed.users || [],
+          donors: parsed.donors || [],
+          shops: parsed.shops || [],
+          messages: parsed.messages || [],
+          reports: parsed.reports || [],
+        });
+      }
+    }
+  } catch (error) {
+    console.error("Failed to sync from Supabase:", error);
+  } finally {
+    isSyncingFromSupabase = false;
+  }
+};
+
+// Subscribe to store changes to trigger updates to Supabase
+useLocalDb.subscribe((state) => {
+  const dbPayload = {
+    users: state.users,
+    donors: state.donors,
+    shops: state.shops,
+    messages: state.messages,
+    reports: state.reports,
+  };
+  const dbString = JSON.stringify(dbPayload);
+
+  if (
+    dbString !== lastSyncedDbString &&
+    !isSyncingFromSupabase &&
+    !isSyncingToSupabase
+  ) {
+    syncToSupabase(dbPayload);
+  }
+});
