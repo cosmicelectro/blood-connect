@@ -16,7 +16,9 @@ import {
   User,
   XCircle,
   MessageSquare,
-  Send
+  Send,
+  Shield,
+  Store,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -25,14 +27,21 @@ import { ErrorMessage } from "../components/ErrorMessage";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { StatusBadge } from "../components/StatusBadge";
 import { useAuth } from "../hooks/useAuth";
+import { useEditMessage } from "../hooks/useBackend";
 import {
   useLogDonation,
   useMyProfile,
   useUpdateProfile,
   useMessages,
-  useSendMessage
+  useSendMessage,
+  useDeleteInbox,
+  useUsers,
+  useEditMessage,
 } from "../hooks/useBackend";
 import { useTranslate } from "../lib/translations";
+import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
+
+
 
 function InfoRow({
   icon,
@@ -292,8 +301,13 @@ export function DonorDashboard() {
   // Chat Inbox states for Donor
   const { data: messages } = useMessages(profile?.id || "");
   const sendMessage = useSendMessage();
+  const { data: users } = useUsers();
+  const deleteInbox = useDeleteInbox();
   const [selectedThreadSenderId, setSelectedThreadSenderId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
+const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+const [editingText, setEditingText] = useState("");
+const editMessage = useEditMessage();
 
   const [donationDateOption, setDonationDateOption] = useState<string>("today");
 
@@ -581,18 +595,45 @@ export function DonorDashboard() {
                 {/* Thread partner list */}
                 <div className="space-y-1 sm:col-span-1 border-r border-border pr-3 h-64 overflow-y-auto">
                   {chatThreads.map(([partnerId, data]: any) => (
-                    <button
-                      key={partnerId}
-                      onClick={() => setSelectedThreadSenderId(partnerId)}
-                      className={`w-full text-left p-2 rounded text-xs font-semibold truncate ${
-                        selectedThreadSenderId === partnerId ? "bg-primary/10 text-primary" : "hover:bg-muted text-foreground"
-                      }`}
-                    >
-                      {data.partnerName}
-                      <span className="block text-[9px] font-normal text-muted-foreground">
-                        {data.messages.length} Messages
-                      </span>
-                    </button>
+                    <div key={partnerId} className={`flex items-center justify-between w-full p-2 rounded text-xs font-semibold truncate ${selectedThreadSenderId === partnerId ? 'bg-primary/10 text-primary' : 'hover:bg-muted text-foreground'}`}>
+                      <button
+                        onClick={() => setSelectedThreadSenderId(partnerId)}
+                        className="flex-1 flex items-center text-left"
+                      >
+                        {/* Role Icon */}
+                        {(() => {
+                          const user = users?.find((u) => u.id === partnerId);
+                          const role = user?.role || "viewer";
+                          switch (role) {
+                            case "admin":
+                              return <Shield className="h-4 w-4 mr-1" />;
+                            case "donor":
+                              return <Droplets className="h-4 w-4 mr-1" />;
+                            case "shopkeeper":
+                              return <Store className="h-4 w-4 mr-1" />;
+                            default:
+                              return <User className="h-4 w-4 mr-1" />;
+                          }
+                        })()}
+                        {data.partnerName} <span className="block text-[9px] font-normal text-muted-foreground">{data.messages.length} Messages</span>
+                      </button>
+                      {/* Delete inbox button */}
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive"><XCircle className="h-3 w-3"/></Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogDescription>This will permanently delete this conversation.</AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => deleteInbox.mutate(partnerId)}>Delete</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   ))}
                 </div>
 
@@ -608,8 +649,25 @@ export function DonorDashboard() {
                               <div className={`p-2 rounded text-xs inline-block font-medium ${
                                 isMe ? "bg-primary text-primary-foreground" : "bg-card text-foreground border border-border"
                               }`}>
-                                {msg.text}
+                                {isMe && editingMessageId === msg.id ? (
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      type="text"
+                                      value={editingText}
+                                      onChange={(e) => setEditingText(e.target.value)}
+                                      className="border rounded p-1 text-xs"
+                                    />
+                                    <Button size="sm" onClick={async () => {
+                                      await editMessage.mutateAsync({ messageId: msg.id, newText: editingText });
+                                      setEditingMessageId(null);
+                                    }}>Save</Button>
+                                    <Button size="sm" variant="outline" onClick={() => setEditingMessageId(null)}>Cancel</Button>
+                                  </div>
+                                ) : (
+                                  <>{msg.text}</>
+                                )}
                               </div>
+                              {isMe && <button onClick={() => { setEditingMessageId(msg.id); setEditingText(msg.text); }} className="text-[10px] text-muted-foreground ml-1">Edit</button>}
                             </div>
                           );
                         })}

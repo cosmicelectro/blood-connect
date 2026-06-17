@@ -15,6 +15,8 @@ export interface LocalShop {
   website?: string;
   ownerId?: string;
   products: Product[];
+  isVerified?: boolean;
+  verificationMethod?: "phone" | "email";
 }
 
 export interface LocalDonor {
@@ -96,9 +98,14 @@ interface LocalDbState {
   deleteShop: (id: string) => void;
   addShopProduct: (shopId: string, product: Product) => void;
   removeShopProduct: (shopId: string, index: number) => void;
-  
+  verifyShop: (shopId: string, method: "phone" | "email") => void;
+
   // Messaging actions
   sendMessage: (senderId: string, senderName: string, receiverId: string, text: string) => void;
+  editMessage: (messageId: string, newText: string) => void;
+  deleteMessage: (messageId: string) => void;
+  deleteInbox: (partnerId: string) => void;
+
   
   // Feedback actions
   submitReport: (userId: string, userName: string, category: FeedbackReport["category"], message: string) => void;
@@ -190,6 +197,25 @@ export const useLocalDb = create<LocalDbState>()(
             donors: state.donors.filter((d) => d.id !== id),
           };
         }),
+      deleteShop: (id) =>
+        set((state) => {
+          const currentUser = state.currentUser;
+          if (!currentUser || currentUser.role !== "admin") {
+            // Not authorized; optionally show a toast in UI layer
+            console.warn("Only admin can delete shops");
+            return state;
+          }
+          return {
+            shops: state.shops.filter((s) => s.id !== id),
+          };
+        }),
+      verifyShop: (shopId, method) =>
+        set((state) => {
+          const shops = state.shops.map((s) =>
+            s.id === shopId ? { ...s, isVerified: true, verificationMethod: method } : s
+          );
+          return { shops };
+        }),
       logDonation: (id, date) => {
         const donationTime = date || Date.now();
         set((state) => ({
@@ -220,26 +246,16 @@ export const useLocalDb = create<LocalDbState>()(
       },
       addShop: (shop) => {
         const id = "shop-" + Math.random().toString(36).substring(2, 9);
+        // New shops start as unverified; verification must be performed separately
+        const newShop = { ...shop, id, isVerified: false, verificationMethod: undefined };
         set((state) => ({
-          shops: [...state.shops, { ...shop, id }],
+          shops: [...state.shops, newShop],
         }));
       },
       updateShop: (id, updatedFields) =>
         set((state) => ({
           shops: state.shops.map((s) => (s.id === id ? { ...s, ...updatedFields } : s)),
         })),
-      deleteShop: (id) =>
-        set((state) => {
-          const currentUser = state.currentUser;
-          if (!currentUser || currentUser.role !== "admin") {
-            // Not authorized; optionally show a toast in UI layer
-            console.warn("Only admin can delete shops");
-            return state;
-          }
-          return {
-            shops: state.shops.filter((s) => s.id !== id),
-          };
-        }),
       addShopProduct: (shopId, product) =>
         set((state) => ({
           shops: state.shops.map((s) =>
@@ -264,6 +280,31 @@ export const useLocalDb = create<LocalDbState>()(
         const newMsg: ChatMessage = { id, senderId, senderName, receiverId, text, timestamp: Date.now() };
         set((state) => ({
           messages: [...state.messages, newMsg],
+        }));
+      },
+      editMessage: (messageId, newText) => {
+        set((state) => ({
+          messages: state.messages.map((m) =>
+            m.id === messageId ? { ...m, text: newText, timestamp: Date.now() } : m
+          ),
+        }));
+      },
+      deleteInbox: (partnerId) => {
+        const currentUserId = get().currentUser?.id;
+        if (!currentUserId) return;
+        set((state) => ({
+          messages: state.messages.filter((m) =>
+            !(
+              (m.senderId === currentUserId && m.receiverId === partnerId) ||
+              (m.senderId === partnerId && m.receiverId === currentUserId)
+            )
+          ),
+        }));
+      },
+
+      deleteMessage: (messageId) => {
+        set((state) => ({
+          messages: state.messages.filter((m) => m.id !== messageId),
         }));
       },
       submitReport: (userId, userName, category, message) => {

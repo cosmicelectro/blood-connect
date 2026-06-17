@@ -234,11 +234,7 @@ export function useAddShop() {
         ownerId: db.currentUser?.id,
         products: [],
       });
-
-      return {
-        __kind__: "ok",
-        ok: null,
-      };
+      return { __kind__: "ok", ok: null };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shops"] });
@@ -246,6 +242,20 @@ export function useAddShop() {
   });
 }
 
+// Hook to verify a shop (phone or email)
+export function useVerifyShop() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: { shopId: string; method: "phone" | "email" }) => {
+      const db = useLocalDb.getState();
+      db.verifyShop(payload.shopId, payload.method);
+      return { ok: true };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["shops"] });
+    },
+  });
+}
 export function useCheckAvailability() {
   const queryClient = useQueryClient();
 
@@ -279,6 +289,55 @@ export function useMessages(userId: string) {
     queryFn: async () => {
       const db = useLocalDb.getState();
       return db.messages.filter((m) => m.senderId === userId || m.receiverId === userId);
+    },
+  });
+}
+
+// Hook to delete a message
+export function useDeleteMessage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (messageId: string) => {
+      const db = useLocalDb.getState();
+      db.deleteMessage(messageId);
+      return { ok: true };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["messages"] });
+    },
+  });
+}
+
+// Hook to edit a message
+export function useEditMessage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ messageId, newText }: { messageId: string; newText: string }) => {
+      const db = useLocalDb.getState();
+      db.editMessage(messageId, newText);
+      return { ok: true };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["messages"] });
+    },
+  });
+}
+export function useDeleteInbox() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (messageIdOrPartnerId: string) => {
+      const db = useLocalDb.getState();
+      if (db.deleteMessage) {
+        db.deleteMessage(messageIdOrPartnerId);
+      } else {
+        // Assume it's partnerId for inbox deletion
+        db.deleteInbox(messageIdOrPartnerId);
+      }
+      return { ok: true };
+    },
+    onSuccess: (_, messageId) => {
+      // Invalidate both sender and receiver message queries (optimistic)
+      queryClient.invalidateQueries({ queryKey: ["messages"] });
     },
   });
 }
