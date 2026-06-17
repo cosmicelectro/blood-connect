@@ -36,16 +36,6 @@ const shopsRoute = createRoute({
   component: ShopsPage,
 });
 
-const adminRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/admin",
-  component: () => {
-    const { currentUser } = useAuth();
-    if (!currentUser) return <Navigate to="/auth" />;
-    if (currentUser.role !== "admin") return <Navigate to="/" />;
-    return <AdminDashboard />;
-  },
-});
 
 const donorRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -66,6 +56,17 @@ const shopkeeperRoute = createRoute({
     if (!currentUser) return <Navigate to="/auth" />;
     if (currentUser.role !== "shopkeeper") return <Navigate to="/" />;
     return <ShopkeeperDashboard />;
+  },
+});
+
+const adminRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/admin",
+  component: () => {
+    const { currentUser } = useAuth();
+    if (!currentUser) return <Navigate to="/auth" />;
+    if (currentUser.role !== "admin") return <Navigate to="/" />;
+    return <AdminDashboard />;
   },
 });
 

@@ -283,21 +283,13 @@ export function AuthPage() {
                   onChange={(e) => setEmail(e.target.value)}
                 />
                 <Button variant="default" className="w-full mt-2" onClick={() => {
-                  const userObj = loginWithOAuth(oauthPopup.provider!, role);
-                  // Overwrite email with entered one if different
-                  if (email && email !== userObj.email) {
-                    // Update user's email in DB (simple replace)
-                    const db = useLocalDb.getState();
-                    db.updateUserRole(userObj.id, userObj.role); // no role change
-                    // directly modify users array
-                    const users = db.users.map(u => u.id === userObj.id ? { ...u, email } : u);
-                    db.setCurrentUser({ ...userObj, email });
-                  }
-                  toast.success(`Successfully authenticated via ${oauthPopup.provider} as ${userObj.role}!`);
-                  setOauthPopup({ isOpen: false, provider: null });
-                  setTimeout(() => {
-                    window.location.href = userObj.role === "admin" ? "/admin" : userObj.role === "donor" ? "/donor" : userObj.role === "shopkeeper" ? "/shopkeeper" : "/";
-                  }, 800);
+                  const userObj = loginWithOAuth(oauthPopup.provider!, role, email);
+                    // No manual DB update needed; loginWithOAuth handles email.
+                    toast.success(`Successfully authenticated via ${oauthPopup.provider} as ${userObj.role}!`);
+                    setOauthPopup({ isOpen: false, provider: null });
+                    setTimeout(() => {
+                      window.location.href = userObj.role === "admin" ? "/admin" : userObj.role === "donor" ? "/donor" : userObj.role === "shopkeeper" ? "/shopkeeper" : "/";
+                    }, 800);
                 }}>{t("continue")}</Button>
                 <Button variant="outline" className="w-full mt-2" onClick={() => setOauthPopup({ isOpen: false, provider: null })}>Cancel</Button>
               </div>

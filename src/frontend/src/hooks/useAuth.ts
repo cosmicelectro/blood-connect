@@ -3,21 +3,21 @@ import { useLocalDb } from "./useLocalDb";
 export function useAuth() {
   const { currentUser, setCurrentUser, registerUser, users, changeRole, language, theme, setLanguage, setTheme } = useLocalDb();
 
-  const loginWithOAuth = (provider: "google" | "facebook", defaultRole: "donor" | "shopkeeper" | "viewer") => {
-    // Generate a simulated user depending on chosen role
-    const mockEmail = `oauth-${defaultRole}@${provider}.com`;
-    let user = users.find((u) => u.email === mockEmail);
-    if (!user) {
-      user = registerUser(
-        mockEmail,
-        `${defaultRole.charAt(0).toUpperCase() + defaultRole.slice(1)} User`,
-        defaultRole,
-        "oauth-pass"
-      );
-    }
-    setCurrentUser(user);
-    return user;
-  };
+  const loginWithOAuth = (provider: "google" | "facebook", defaultRole: "donor" | "shopkeeper" | "viewer", email?: string) => {
+  // Use provided email if given, otherwise generate a simulated one
+  const userEmail = email?.trim() ? email : `oauth-${defaultRole}@${provider}.com`;
+  let user = users.find((u) => u.email === userEmail);
+  if (!user) {
+    user = registerUser(
+      userEmail,
+      `${defaultRole.charAt(0).toUpperCase() + defaultRole.slice(1)} User`,
+      defaultRole,
+      "oauth-pass"
+    );
+  }
+  setCurrentUser(user);
+  return user;
+};
 
   const loginWithCredentials = (email: string, password?: string) => {
     const user = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
