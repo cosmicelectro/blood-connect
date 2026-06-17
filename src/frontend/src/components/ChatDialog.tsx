@@ -1,11 +1,16 @@
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { MessageSquare, Send } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { useAuth } from "../hooks/useAuth";
 import { useMessages, useSendMessage } from "../hooks/useBackend";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Send, MessageSquare } from "lucide-react";
-import { toast } from "sonner";
 
 interface ChatDialogProps {
   isOpen: boolean;
@@ -14,7 +19,12 @@ interface ChatDialogProps {
   receiverName: string;
 }
 
-export function ChatDialog({ isOpen, onClose, receiverId, receiverName }: ChatDialogProps) {
+export function ChatDialog({
+  isOpen,
+  onClose,
+  receiverId,
+  receiverName,
+}: ChatDialogProps) {
   const { user, isLoggedIn } = useAuth();
   const { data: messages } = useMessages(user?.id || "");
   const sendMessage = useSendMessage();
@@ -23,7 +33,7 @@ export function ChatDialog({ isOpen, onClose, receiverId, receiverName }: ChatDi
   const thread = (messages || []).filter(
     (m) =>
       (m.senderId === user?.id && m.receiverId === receiverId) ||
-      (m.senderId === receiverId && m.receiverId === user?.id)
+      (m.senderId === receiverId && m.receiverId === user?.id),
   );
 
   const handleSend = async (e: React.FormEvent) => {
@@ -72,13 +82,18 @@ export function ChatDialog({ isOpen, onClose, receiverId, receiverName }: ChatDi
                 >
                   <div
                     className={`p-2.5 rounded-lg text-sm font-medium ${
-                      isMe ? "bg-primary text-primary-foreground" : "bg-card text-foreground border border-border"
+                      isMe
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-card text-foreground border border-border"
                     }`}
                   >
                     {msg.text}
                   </div>
                   <span className="text-[10px] text-muted-foreground mt-0.5 px-1 font-mono">
-                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {new Date(msg.timestamp).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </span>
                 </div>
               );
@@ -95,7 +110,11 @@ export function ChatDialog({ isOpen, onClose, receiverId, receiverName }: ChatDi
             disabled={!isLoggedIn}
             className="flex-1"
           />
-          <Button type="submit" size="icon" disabled={!isLoggedIn || !text.trim()}>
+          <Button
+            type="submit"
+            size="icon"
+            disabled={!isLoggedIn || !text.trim()}
+          >
             <Send className="h-4 w-4" />
           </Button>
         </form>

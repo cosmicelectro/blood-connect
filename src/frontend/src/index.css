@@ -7,7 +7,6 @@ input::placeholder {
   opacity: 0.6;
 }
 
-
 @layer base {
   :root {
     --font-display: "General Sans", sans-serif;

@@ -1,5 +1,5 @@
+import { Droplets, Shield, Store, User } from "lucide-react";
 import React from "react";
-import { User, Store, ShieldCheck, Users } from "lucide-react";
 
 export type Role = "donor" | "shopkeeper" | "admin" | "user";
 
@@ -7,17 +7,20 @@ export type Role = "donor" | "shopkeeper" | "admin" | "user";
  * RoleIcon renders a distinctive icon for each user role.
  * Uses lucide-react icons for a modern, lightweight look.
  */
-export function RoleIcon({ role, className }: { role: Role; className?: string }) {
+export function RoleIcon({
+  role,
+  className,
+}: { role: Role; className?: string }) {
   const size = 20;
   switch (role) {
     case "donor":
-      return <User className={className} size={size} />; // donor as a simple user silhouette
+      return <Droplets className={className} size={size} />; // donor as droplets icon
     case "shopkeeper":
       return <Store className={className} size={size} />; // shopkeeper represented by a store icon
     case "admin":
-      return <ShieldCheck className={className} size={size} />; // admin with shield-check
+      return <Shield className={className} size={size} />; // admin with shield
     case "user":
     default:
-      return <Users className={className} size={size} />; // generic user group icon
+      return <User className={className} size={size} />; // generic user silhouette
   }
 }

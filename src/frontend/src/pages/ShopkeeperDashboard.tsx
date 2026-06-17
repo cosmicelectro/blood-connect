@@ -1,19 +1,38 @@
-import { useState } from "react";
-import { useLocalDb, LocalShop } from "../hooks/useLocalDb";
-import { useAuth } from "../hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Store, Plus, Trash2, Edit, ShoppingBag, PlusCircle, Globe, MapPin, Phone, MessageSquare, Send } from "lucide-react";
-import { useTranslate } from "../lib/translations";
-import { useMessages, useSendMessage } from "../hooks/useBackend";
+import {
+  Edit,
+  Globe,
+  MapPin,
+  MessageSquare,
+  Phone,
+  Plus,
+  PlusCircle,
+  Send,
+  ShoppingBag,
+  Store,
+  Trash2,
+} from "lucide-react";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { useAuth } from "../hooks/useAuth";
+import { useMessages, useSendMessage } from "../hooks/useBackend";
+import { type LocalShop, useLocalDb } from "../hooks/useLocalDb";
 
 export function ShopkeeperDashboard() {
   const { user, language } = useAuth();
-  const t = useTranslate(language);
-  const { shops, addShop, updateShop, deleteShop, addShopProduct, removeShopProduct } = useLocalDb();
+  const { t } = useTranslation();
+  const {
+    shops,
+    addShop,
+    updateShop,
+    deleteShop,
+    addShopProduct,
+    removeShopProduct,
+  } = useLocalDb();
 
   const [selectedShopId, setSelectedShopId] = useState<string | null>(null);
   const [editingShop, setEditingShop] = useState<LocalShop | null>(null);
@@ -22,7 +41,9 @@ export function ShopkeeperDashboard() {
   // Messages / Inbox management
   const { data: messages } = useMessages(user?.id || "");
   const sendMessage = useSendMessage();
-  const [selectedThreadSenderId, setSelectedThreadSenderId] = useState<string | null>(null);
+  const [selectedThreadSenderId, setSelectedThreadSenderId] = useState<
+    string | null
+  >(null);
   const [replyText, setReplyText] = useState("");
 
   // New product form
@@ -53,7 +74,13 @@ export function ShopkeeperDashboard() {
       ownerId: user?.id,
       products: [],
     });
-    setNewShop({ name: "", description: "", address: "", phone: "", website: "" });
+    setNewShop({
+      name: "",
+      description: "",
+      address: "",
+      phone: "",
+      website: "",
+    });
     setIsAddingShop(false);
     toast.success("Shop registered successfully!");
   };
@@ -64,7 +91,7 @@ export function ShopkeeperDashboard() {
       toast.error("Please select a shop first");
       return;
     }
-    const price = parseFloat(productPrice);
+    const price = Number.parseFloat(productPrice);
     if (!productName || isNaN(price)) {
       toast.error("Enter a valid name and price");
       return;
@@ -100,7 +127,9 @@ export function ShopkeeperDashboard() {
     if (!replyText.trim() || !selectedThreadSenderId) return;
 
     // Find the sender's name
-    const firstMsg = (messages || []).find((m) => m.senderId === selectedThreadSenderId);
+    const firstMsg = (messages || []).find(
+      (m) => m.senderId === selectedThreadSenderId,
+    );
     const senderName = firstMsg ? firstMsg.senderName : "Customer";
 
     await sendMessage.mutateAsync({
@@ -129,13 +158,17 @@ export function ShopkeeperDashboard() {
   const selectedThreadMessages = selectedThreadSenderId
     ? (messages || []).filter(
         (m) =>
-          (m.senderId === user?.id && m.receiverId === selectedThreadSenderId) ||
-          (m.senderId === selectedThreadSenderId && m.receiverId === user?.id)
+          (m.senderId === user?.id &&
+            m.receiverId === selectedThreadSenderId) ||
+          (m.senderId === selectedThreadSenderId && m.receiverId === user?.id),
       )
     : [];
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 space-y-6" data-ocid="shopkeeper.page">
+    <div
+      className="mx-auto max-w-6xl px-4 py-8 space-y-6"
+      data-ocid="shopkeeper.page"
+    >
       <div className="border-b border-border pb-4 flex justify-between items-center flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-display font-bold text-foreground tracking-tight">
@@ -154,15 +187,19 @@ export function ShopkeeperDashboard() {
       {myShops.length === 0 && !isAddingShop ? (
         <div className="text-center py-16 border border-dashed border-border rounded-xl bg-card">
           <Store className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-bold font-display">No registered shops yet</h3>
+          <h3 className="text-lg font-bold font-display">
+            No registered shops yet
+          </h3>
           <p className="text-sm text-muted-foreground max-w-md mx-auto mt-1 mb-6">
-            Register your store details to list blood bags, medical equipment, kits, and prices for viewer seekers.
+            Register your store details to list blood bags, medical equipment,
+            kits, and prices for viewer seekers.
           </p>
-          <Button onClick={() => setIsAddingShop(true)}>Register Your First Shop</Button>
+          <Button onClick={() => setIsAddingShop(true)}>
+            Register Your First Shop
+          </Button>
         </div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-3">
-          
           {/* Shop Selector and Details */}
           <div className="space-y-6">
             <div className="rounded-xl border border-border bg-card p-5 shadow-sm space-y-4">
@@ -182,7 +219,9 @@ export function ShopkeeperDashboard() {
                     }`}
                   >
                     {s.name}
-                    <div className="text-xs font-normal text-muted-foreground mt-0.5 truncate">{s.address}</div>
+                    <div className="text-xs font-normal text-muted-foreground mt-0.5 truncate">
+                      {s.address}
+                    </div>
                   </button>
                 ))}
               </div>
@@ -191,7 +230,9 @@ export function ShopkeeperDashboard() {
             {selectedShop && (
               <div className="rounded-xl border border-border bg-card p-5 shadow-sm space-y-4">
                 <div className="flex justify-between items-start">
-                  <h3 className="font-bold text-lg font-display">{selectedShop.name}</h3>
+                  <h3 className="font-bold text-lg font-display">
+                    {selectedShop.name}
+                  </h3>
                   <button
                     type="button"
                     onClick={() => setEditingShop(selectedShop)}
@@ -200,8 +241,10 @@ export function ShopkeeperDashboard() {
                     <Edit className="h-3.5 w-3.5" /> Edit
                   </button>
                 </div>
-                <p className="text-sm text-muted-foreground">{selectedShop.description}</p>
-                
+                <p className="text-sm text-muted-foreground">
+                  {selectedShop.description}
+                </p>
+
                 <div className="space-y-2 text-xs border-t border-border pt-4">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
@@ -214,7 +257,12 @@ export function ShopkeeperDashboard() {
                   {selectedShop.website && (
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Globe className="h-3.5 w-3.5 flex-shrink-0" />
-                      <a href={selectedShop.website} target="_blank" rel="noreferrer" className="text-primary hover:underline">
+                      <a
+                        href={selectedShop.website}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-primary hover:underline"
+                      >
                         {selectedShop.website}
                       </a>
                     </div>
@@ -227,7 +275,6 @@ export function ShopkeeperDashboard() {
           {/* Catalog & Prices management & Customer Chat Box */}
           {selectedShop && (
             <div className="lg:col-span-2 space-y-6">
-              
               {/* Product Catalog list builder */}
               <div className="rounded-xl border border-border bg-card p-6 shadow-sm space-y-6">
                 <div className="flex justify-between items-center border-b border-border pb-3">
@@ -237,9 +284,14 @@ export function ShopkeeperDashboard() {
                   </h2>
                 </div>
 
-                <form onSubmit={handleAddProduct} className="grid sm:grid-cols-3 gap-3 bg-muted/30 p-4 rounded-lg">
+                <form
+                  onSubmit={handleAddProduct}
+                  className="grid sm:grid-cols-3 gap-3 bg-muted/30 p-4 rounded-lg"
+                >
                   <div className="sm:col-span-2 space-y-1">
-                    <Label htmlFor="p-name" className="text-xs">Product Name</Label>
+                    <Label htmlFor="p-name" className="text-xs">
+                      Product Name
+                    </Label>
                     <Input
                       id="p-name"
                       placeholder="Blood bag, Syringe, Test kit..."
@@ -249,7 +301,9 @@ export function ShopkeeperDashboard() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="p-price" className="text-xs">Price (BDT)</Label>
+                    <Label htmlFor="p-price" className="text-xs">
+                      Price (BDT)
+                    </Label>
                     <div className="flex gap-2">
                       <Input
                         id="p-price"
@@ -259,7 +313,11 @@ export function ShopkeeperDashboard() {
                         value={productPrice}
                         onChange={(e) => setProductPrice(e.target.value)}
                       />
-                      <Button type="submit" size="icon" className="flex-shrink-0">
+                      <Button
+                        type="submit"
+                        size="icon"
+                        className="flex-shrink-0"
+                      >
                         <PlusCircle className="h-5 w-5" />
                       </Button>
                     </div>
@@ -278,8 +336,12 @@ export function ShopkeeperDashboard() {
                         className="flex items-center justify-between border border-border/60 p-3 rounded-lg bg-card hover:bg-muted/10"
                       >
                         <div>
-                          <div className="text-sm font-semibold">{prod.name}</div>
-                          <div className="text-xs text-primary font-bold">{prod.price.toLocaleString()} BDT</div>
+                          <div className="text-sm font-semibold">
+                            {prod.name}
+                          </div>
+                          <div className="text-xs text-primary font-bold">
+                            {prod.price.toLocaleString()} BDT
+                          </div>
                         </div>
                         <button
                           type="button"
@@ -313,7 +375,9 @@ export function ShopkeeperDashboard() {
                           key={partnerId}
                           onClick={() => setSelectedThreadSenderId(partnerId)}
                           className={`w-full text-left p-2 rounded text-xs font-semibold truncate ${
-                            selectedThreadSenderId === partnerId ? "bg-primary/10 text-primary" : "hover:bg-muted text-foreground"
+                            selectedThreadSenderId === partnerId
+                              ? "bg-primary/10 text-primary"
+                              : "hover:bg-muted text-foreground"
                           }`}
                         >
                           {data.partnerName}
@@ -331,10 +395,17 @@ export function ShopkeeperDashboard() {
                             {selectedThreadMessages.map((msg) => {
                               const isMe = msg.senderId === user?.id;
                               return (
-                                <div key={msg.id} className={`max-w-[85%] ${isMe ? "ml-auto text-right" : "mr-auto text-left"}`}>
-                                  <div className={`p-2 rounded text-xs inline-block font-medium ${
-                                    isMe ? "bg-primary text-primary-foreground" : "bg-card text-foreground border border-border"
-                                  }`}>
+                                <div
+                                  key={msg.id}
+                                  className={`max-w-[85%] ${isMe ? "ml-auto text-right" : "mr-auto text-left"}`}
+                                >
+                                  <div
+                                    className={`p-2 rounded text-xs inline-block font-medium ${
+                                      isMe
+                                        ? "bg-primary text-primary-foreground"
+                                        : "bg-card text-foreground border border-border"
+                                    }`}
+                                  >
                                     {msg.text}
                                   </div>
                                 </div>
@@ -342,14 +413,21 @@ export function ShopkeeperDashboard() {
                             })}
                           </div>
 
-                          <form onSubmit={handleSendReply} className="flex gap-2 pt-2">
+                          <form
+                            onSubmit={handleSendReply}
+                            className="flex gap-2 pt-2"
+                          >
                             <Input
                               placeholder="Type reply..."
                               value={replyText}
                               onChange={(e) => setReplyText(e.target.value)}
                               className="flex-1 text-xs h-8"
                             />
-                            <Button type="submit" size="icon" className="h-8 w-8">
+                            <Button
+                              type="submit"
+                              size="icon"
+                              className="h-8 w-8"
+                            >
                               <Send className="h-3.5 w-3.5" />
                             </Button>
                           </form>
@@ -363,7 +441,6 @@ export function ShopkeeperDashboard() {
                   </div>
                 )}
               </section>
-
             </div>
           )}
         </div>
@@ -372,34 +449,77 @@ export function ShopkeeperDashboard() {
       {/* Register Outlet Modal */}
       {isAddingShop && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <form onSubmit={handleRegisterShop} className="w-full max-w-md bg-card border border-border p-6 rounded-xl space-y-4">
+          <form
+            onSubmit={handleRegisterShop}
+            className="w-full max-w-md bg-card border border-border p-6 rounded-xl space-y-4"
+          >
             <h3 className="text-lg font-bold font-display">Register Outlet</h3>
             <div className="space-y-2">
               <div>
                 <Label>Store Outlet Name</Label>
-                <Input required placeholder="MediLife Supplies" value={newShop.name} onChange={(e) => setNewShop({ ...newShop, name: e.target.value })} />
+                <Input
+                  required
+                  placeholder="MediLife Supplies"
+                  value={newShop.name}
+                  onChange={(e) =>
+                    setNewShop({ ...newShop, name: e.target.value })
+                  }
+                />
               </div>
               <div>
                 <Label>Description</Label>
-                <Textarea required placeholder="List surgical items..." value={newShop.description} onChange={(e) => setNewShop({ ...newShop, description: e.target.value })} />
+                <Textarea
+                  required
+                  placeholder="List surgical items..."
+                  value={newShop.description}
+                  onChange={(e) =>
+                    setNewShop({ ...newShop, description: e.target.value })
+                  }
+                />
               </div>
               <div>
                 <Label>Address</Label>
-                <Input required placeholder="Banani, Dhaka" value={newShop.address} onChange={(e) => setNewShop({ ...newShop, address: e.target.value })} />
+                <Input
+                  required
+                  placeholder="Banani, Dhaka"
+                  value={newShop.address}
+                  onChange={(e) =>
+                    setNewShop({ ...newShop, address: e.target.value })
+                  }
+                />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <Label>Phone</Label>
-                  <Input required placeholder="+880..." value={newShop.phone} onChange={(e) => setNewShop({ ...newShop, phone: e.target.value })} />
+                  <Input
+                    required
+                    placeholder="+880..."
+                    value={newShop.phone}
+                    onChange={(e) =>
+                      setNewShop({ ...newShop, phone: e.target.value })
+                    }
+                  />
                 </div>
                 <div>
                   <Label>Website</Label>
-                  <Input placeholder="URL" value={newShop.website} onChange={(e) => setNewShop({ ...newShop, website: e.target.value })} />
+                  <Input
+                    placeholder="URL"
+                    value={newShop.website}
+                    onChange={(e) =>
+                      setNewShop({ ...newShop, website: e.target.value })
+                    }
+                  />
                 </div>
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" type="button" onClick={() => setIsAddingShop(false)}>Cancel</Button>
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setIsAddingShop(false)}
+              >
+                Cancel
+              </Button>
               <Button type="submit">Register Shop</Button>
             </div>
           </form>
@@ -409,32 +529,73 @@ export function ShopkeeperDashboard() {
       {/* Editing Shop Modal */}
       {editingShop && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <form onSubmit={handleSaveShopEdit} className="w-full max-w-md bg-card border border-border p-6 rounded-xl space-y-4">
+          <form
+            onSubmit={handleSaveShopEdit}
+            className="w-full max-w-md bg-card border border-border p-6 rounded-xl space-y-4"
+          >
             <h3 className="text-lg font-bold font-display">Edit Shop Info</h3>
             <div className="space-y-2">
               <div>
                 <Label>Outlet Name</Label>
-                <Input required value={editingShop.name} onChange={(e) => setEditingShop({ ...editingShop, name: e.target.value })} />
+                <Input
+                  required
+                  value={editingShop.name}
+                  onChange={(e) =>
+                    setEditingShop({ ...editingShop, name: e.target.value })
+                  }
+                />
               </div>
               <div>
                 <Label>Description</Label>
-                <Textarea required value={editingShop.description} onChange={(e) => setEditingShop({ ...editingShop, description: e.target.value })} />
+                <Textarea
+                  required
+                  value={editingShop.description}
+                  onChange={(e) =>
+                    setEditingShop({
+                      ...editingShop,
+                      description: e.target.value,
+                    })
+                  }
+                />
               </div>
               <div>
                 <Label>Address</Label>
-                <Input required value={editingShop.address} onChange={(e) => setEditingShop({ ...editingShop, address: e.target.value })} />
+                <Input
+                  required
+                  value={editingShop.address}
+                  onChange={(e) =>
+                    setEditingShop({ ...editingShop, address: e.target.value })
+                  }
+                />
               </div>
               <div>
                 <Label>Phone</Label>
-                <Input required value={editingShop.phone} onChange={(e) => setEditingShop({ ...editingShop, phone: e.target.value })} />
+                <Input
+                  required
+                  value={editingShop.phone}
+                  onChange={(e) =>
+                    setEditingShop({ ...editingShop, phone: e.target.value })
+                  }
+                />
               </div>
               <div>
                 <Label>Website (optional)</Label>
-                <Input value={editingShop.website || ""} onChange={(e) => setEditingShop({ ...editingShop, website: e.target.value })} />
+                <Input
+                  value={editingShop.website || ""}
+                  onChange={(e) =>
+                    setEditingShop({ ...editingShop, website: e.target.value })
+                  }
+                />
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" type="button" onClick={() => setEditingShop(null)}>Cancel</Button>
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setEditingShop(null)}
+              >
+                Cancel
+              </Button>
               <Button type="submit">Save Changes</Button>
             </div>
           </form>

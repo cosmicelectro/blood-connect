@@ -1,15 +1,15 @@
-import { useState } from "react";
-import { useAuth } from "../hooks/useAuth";
-import { useMessages, useSendMessage, useUsers } from "../hooks/useBackend";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, User as UserIcon, MessageSquare } from "lucide-react";
+import { MessageSquare, Send, User as UserIcon } from "lucide-react";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { useTranslate } from "../lib/translations";
+import { useAuth } from "../hooks/useAuth";
+import { useMessages, useSendMessage, useUsers } from "../hooks/useBackend";
 
 export function ChatPage() {
-  const { user, isLoggedIn, language } = useAuth();
-  const t = useTranslate(language);
+  const { user, isLoggedIn } = useAuth();
+  const { t } = useTranslation();
   const { data: users = [] } = useUsers();
   const { data: messages = [] } = useMessages(user?.id || "");
   const sendMessage = useSendMessage();
@@ -24,7 +24,9 @@ export function ChatPage() {
         <div>
           <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground opacity-50 mb-4" />
           <h2 className="text-xl font-bold font-display">Please Log In</h2>
-          <p className="text-muted-foreground mt-2">You need to be logged in to access messages.</p>
+          <p className="text-muted-foreground mt-2">
+            You need to be logged in to access messages.
+          </p>
         </div>
       </div>
     );
@@ -35,7 +37,7 @@ export function ChatPage() {
   const thread = messages.filter(
     (m) =>
       (m.senderId === user?.id && m.receiverId === activeChatUserId) ||
-      (m.senderId === activeChatUserId && m.receiverId === user?.id)
+      (m.senderId === activeChatUserId && m.receiverId === user?.id),
   );
 
   const handleSend = async (e: React.FormEvent) => {
@@ -54,21 +56,21 @@ export function ChatPage() {
 
   // Group users you have chatted with or filtered by search
   const chatPartners = users.filter((u) => u.id !== user?.id);
-  const filteredPartners = chatPartners.filter((u) => 
-    u.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    u.email.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredPartners = chatPartners.filter(
+    (u) =>
+      u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      u.email.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 h-[calc(100vh-4rem)]">
       <div className="flex h-full border border-border rounded-xl overflow-hidden bg-card shadow-sm">
-        
         {/* Sidebar: Users List */}
         <div className="w-1/3 border-r border-border flex flex-col bg-muted/20">
           <div className="p-4 border-b border-border">
             <h2 className="text-lg font-bold font-display mb-3">Messages</h2>
-            <Input 
-              placeholder="Search users..." 
+            <Input
+              placeholder="Search users..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="bg-card"
@@ -76,7 +78,9 @@ export function ChatPage() {
           </div>
           <div className="flex-1 overflow-y-auto p-2 space-y-1">
             {filteredPartners.length === 0 ? (
-              <p className="text-sm text-center text-muted-foreground mt-4">No users found.</p>
+              <p className="text-sm text-center text-muted-foreground mt-4">
+                No users found.
+              </p>
             ) : (
               filteredPartners.map((u) => {
                 const isActive = u.id === activeChatUserId;
@@ -92,11 +96,15 @@ export function ChatPage() {
                       <UserIcon className="h-5 w-5" />
                     </div>
                     <div className="overflow-hidden">
-                      <p className="font-semibold text-sm truncate text-foreground">{u.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{u.role}</p>
+                      <p className="font-semibold text-sm truncate text-foreground">
+                        {u.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {u.role}
+                      </p>
                     </div>
                   </button>
-                )
+                );
               })
             )}
           </div>
@@ -112,8 +120,12 @@ export function ChatPage() {
                   <UserIcon className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold font-display">{activeChatUser.name}</h3>
-                  <p className="text-xs text-muted-foreground uppercase">{activeChatUser.role}</p>
+                  <h3 className="font-bold font-display">
+                    {activeChatUser.name}
+                  </h3>
+                  <p className="text-xs text-muted-foreground uppercase">
+                    {activeChatUser.role}
+                  </p>
                 </div>
               </div>
 
@@ -135,13 +147,18 @@ export function ChatPage() {
                       >
                         <div
                           className={`p-3 rounded-xl text-sm ${
-                            isMe ? "bg-primary text-primary-foreground rounded-tr-sm" : "bg-muted text-foreground rounded-tl-sm"
+                            isMe
+                              ? "bg-primary text-primary-foreground rounded-tr-sm"
+                              : "bg-muted text-foreground rounded-tl-sm"
                           }`}
                         >
                           {msg.text}
                         </div>
                         <span className="text-[10px] text-muted-foreground mt-1 px-1 font-mono">
-                          {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {new Date(msg.timestamp).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                         </span>
                       </div>
                     );

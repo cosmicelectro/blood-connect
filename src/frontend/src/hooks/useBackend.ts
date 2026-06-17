@@ -1,13 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalDb } from "./useLocalDb";
 
-function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+function haversineKm(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number,
+): number {
   const R = 6371.0;
   const dLat = (lat2 - lat1) * (Math.PI / 180.0);
   const dLng = (lng2 - lng1) * (Math.PI / 180.0);
-  const a = Math.sin(dLat / 2.0) * Math.sin(dLat / 2.0)
-    + Math.cos(lat1 * (Math.PI / 180.0)) * Math.cos(lat2 * (Math.PI / 180.0))
-      * Math.sin(dLng / 2.0) * Math.sin(dLng / 2.0);
+  const a =
+    Math.sin(dLat / 2.0) * Math.sin(dLat / 2.0) +
+    Math.cos(lat1 * (Math.PI / 180.0)) *
+      Math.cos(lat2 * (Math.PI / 180.0)) *
+      Math.sin(dLng / 2.0) *
+      Math.sin(dLng / 2.0);
   const c = 2.0 * Math.atan2(Math.sqrt(a), Math.sqrt(1.0 - a));
   return R * c;
 }
@@ -44,7 +52,16 @@ export function useSearchDonors(
   enabled: boolean,
 ) {
   return useQuery({
-    queryKey: ["donors-search", bloodType, division, district, subDistrict, area, seekerLat, seekerLng],
+    queryKey: [
+      "donors-search",
+      bloodType,
+      division,
+      district,
+      subDistrict,
+      area,
+      seekerLat,
+      seekerLng,
+    ],
     enabled,
     queryFn: async () => {
       const db = useLocalDb.getState();
@@ -55,15 +72,23 @@ export function useSearchDonors(
       }
 
       const mapped = list.map((d) => {
-        const dist = (seekerLat !== 0 || seekerLng !== 0) 
-          ? haversineKm(seekerLat, seekerLng, d.lat, d.lng)
-          : 0;
-          
+        const dist =
+          seekerLat !== 0 || seekerLng !== 0
+            ? haversineKm(seekerLat, seekerLng, d.lat, d.lng)
+            : 0;
+
         let matchScore = 0;
-        if (area && d.area?.toLowerCase() === area.toLowerCase()) matchScore += 1000;
-        if (subDistrict && d.subDistrict?.toLowerCase() === subDistrict.toLowerCase()) matchScore += 100;
-        if (district && d.district?.toLowerCase() === district.toLowerCase()) matchScore += 10;
-        if (division && d.division?.toLowerCase() === division.toLowerCase()) matchScore += 1;
+        if (area && d.area?.toLowerCase() === area.toLowerCase())
+          matchScore += 1000;
+        if (
+          subDistrict &&
+          d.subDistrict?.toLowerCase() === subDistrict.toLowerCase()
+        )
+          matchScore += 100;
+        if (district && d.district?.toLowerCase() === district.toLowerCase())
+          matchScore += 10;
+        if (division && d.division?.toLowerCase() === division.toLowerCase())
+          matchScore += 1;
 
         return {
           id: d.id,
@@ -138,7 +163,7 @@ export function useRegisterDonor() {
     mutationFn: async (form: any) => {
       const db = useLocalDb.getState();
       db.addDonor({
-        id: form.id || (db.currentUser?.id || "donor-self"),
+        id: form.id || db.currentUser?.id || "donor-self",
         name: form.name,
         phone: form.phone,
         address: form.address,
@@ -246,7 +271,10 @@ export function useAddShop() {
 export function useVerifyShop() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: { shopId: string; method: "phone" | "email" }) => {
+    mutationFn: async (payload: {
+      shopId: string;
+      method: "phone" | "email";
+    }) => {
       const db = useLocalDb.getState();
       db.verifyShop(payload.shopId, payload.method);
       return { ok: true };
@@ -288,7 +316,9 @@ export function useMessages(userId: string) {
     queryKey: ["messages", userId],
     queryFn: async () => {
       const db = useLocalDb.getState();
-      return db.messages.filter((m) => m.senderId === userId || m.receiverId === userId);
+      return db.messages.filter(
+        (m) => m.senderId === userId || m.receiverId === userId,
+      );
     },
   });
 }
@@ -312,7 +342,10 @@ export function useDeleteMessage() {
 export function useEditMessage() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ messageId, newText }: { messageId: string; newText: string }) => {
+    mutationFn: async ({
+      messageId,
+      newText,
+    }: { messageId: string; newText: string }) => {
       const db = useLocalDb.getState();
       db.editMessage(messageId, newText);
       return { ok: true };
@@ -325,18 +358,12 @@ export function useEditMessage() {
 export function useDeleteInbox() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (messageIdOrPartnerId: string) => {
+    mutationFn: async (partnerId: string) => {
       const db = useLocalDb.getState();
-      if (db.deleteMessage) {
-        db.deleteMessage(messageIdOrPartnerId);
-      } else {
-        // Assume it's partnerId for inbox deletion
-        db.deleteInbox(messageIdOrPartnerId);
-      }
+      db.deleteInbox(partnerId);
       return { ok: true };
     },
-    onSuccess: (_, messageId) => {
-      // Invalidate both sender and receiver message queries (optimistic)
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["messages"] });
     },
   });
@@ -345,14 +372,28 @@ export function useDeleteInbox() {
 export function useSendMessage() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: { senderId: string; senderName: string; receiverId: string; text: string }) => {
+    mutationFn: async (payload: {
+      senderId: string;
+      senderName: string;
+      receiverId: string;
+      text: string;
+    }) => {
       const db = useLocalDb.getState();
-      db.sendMessage(payload.senderId, payload.senderName, payload.receiverId, payload.text);
+      db.sendMessage(
+        payload.senderId,
+        payload.senderName,
+        payload.receiverId,
+        payload.text,
+      );
       return { ok: true };
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["messages", variables.senderId] });
-      queryClient.invalidateQueries({ queryKey: ["messages", variables.receiverId] });
+      queryClient.invalidateQueries({
+        queryKey: ["messages", variables.senderId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["messages", variables.receiverId],
+      });
     },
   });
 }
@@ -360,9 +401,19 @@ export function useSendMessage() {
 export function useSubmitReport() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: { userId: string; userName: string; category: any; message: string }) => {
+    mutationFn: async (payload: {
+      userId: string;
+      userName: string;
+      category: any;
+      message: string;
+    }) => {
       const db = useLocalDb.getState();
-      db.submitReport(payload.userId, payload.userName, payload.category, payload.message);
+      db.submitReport(
+        payload.userId,
+        payload.userName,
+        payload.category,
+        payload.message,
+      );
       return { ok: true };
     },
     onSuccess: () => {

@@ -1,12 +1,18 @@
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { AlertTriangle } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { useAuth } from "../hooks/useAuth";
 import { useSubmitReport } from "../hooks/useBackend";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { AlertTriangle } from "lucide-react";
-import { toast } from "sonner";
 
 interface ReportDialogProps {
   isOpen: boolean;
@@ -16,7 +22,9 @@ interface ReportDialogProps {
 export function ReportDialog({ isOpen, onClose }: ReportDialogProps) {
   const { user, isLoggedIn } = useAuth();
   const submitReport = useSubmitReport();
-  const [category, setCategory] = useState<"bug" | "suggestion" | "other">("bug");
+  const [category, setCategory] = useState<"bug" | "suggestion" | "other">(
+    "bug",
+  );
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -52,7 +60,9 @@ export function ReportDialog({ isOpen, onClose }: ReportDialogProps) {
         <DialogHeader className="border-b border-border pb-3 flex flex-row items-center gap-2">
           <AlertTriangle className="h-5 w-5 text-primary animate-bounce" />
           <div>
-            <DialogTitle className="text-base font-bold font-display">Report Issue / Bug</DialogTitle>
+            <DialogTitle className="text-base font-bold font-display">
+              Report Issue / Bug
+            </DialogTitle>
             <DialogDescription className="text-xs">
               Tell our admin team about issues, suggestions, or bugs.
             </DialogDescription>
@@ -74,7 +84,9 @@ export function ReportDialog({ isOpen, onClose }: ReportDialogProps) {
           </div>
 
           <div className="space-y-1">
-            <Label htmlFor="rep-message" className="text-xs font-semibold">Message Detail</Label>
+            <Label htmlFor="rep-message" className="text-xs font-semibold">
+              Message Detail
+            </Label>
             <Textarea
               id="rep-message"
               placeholder="Describe the issue or suggestion in detail..."
@@ -90,7 +102,10 @@ export function ReportDialog({ isOpen, onClose }: ReportDialogProps) {
             <Button variant="outline" type="button" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={submitting || !isLoggedIn || !message.trim()}>
+            <Button
+              type="submit"
+              disabled={submitting || !isLoggedIn || !message.trim()}
+            >
               {submitting ? "Submitting..." : "Submit Report"}
             </Button>
           </div>

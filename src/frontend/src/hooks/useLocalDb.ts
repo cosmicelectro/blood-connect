@@ -72,26 +72,31 @@ interface LocalDbState {
   currentUser: LocalUser | null;
   language: "en" | "bn";
   theme: "light" | "dark";
-  
+
   // App preferences
   setLanguage: (lang: "en" | "bn") => void;
   setTheme: (theme: "light" | "dark") => void;
-    // Auth actions
-   setCurrentUser: (user: LocalUser | null) => void;
-   registerUser: (email: string, name: string, role: LocalUser["role"], password?: string) => LocalUser;
-   updateUserEmail: (userId: string, newEmail: string) => void;
-   updatePassword: (userId: string, newPassword: string) => void;
-   adminChangeUserRole: (userId: string, newRole: LocalUser["role"]) => void;
-   updateUserRole: (userId: string, newRole: LocalUser["role"]) => void;
-   verifyUser: (userId: string) => void;
-  
+  // Auth actions
+  setCurrentUser: (user: LocalUser | null) => void;
+  registerUser: (
+    email: string,
+    name: string,
+    role: LocalUser["role"],
+    password?: string,
+  ) => LocalUser;
+  updateUserEmail: (userId: string, newEmail: string) => void;
+  updatePassword: (userId: string, newPassword: string) => void;
+  adminChangeUserRole: (userId: string, newRole: LocalUser["role"]) => void;
+  updateUserRole: (userId: string, newRole: LocalUser["role"]) => void;
+  verifyUser: (userId: string) => void;
+
   // Donor actions
   addDonor: (donor: Omit<LocalDonor, "isAvailable" | "donationCount">) => void;
   updateDonor: (id: string, donor: Partial<LocalDonor>) => void;
   deleteDonor: (id: string) => void;
   logDonation: (id: string, date?: number) => void;
   checkAvailability: () => void;
-  
+
   // Shop actions
   addShop: (shop: Omit<LocalShop, "id">) => void;
   updateShop: (id: string, shop: Partial<LocalShop>) => void;
@@ -101,15 +106,25 @@ interface LocalDbState {
   verifyShop: (shopId: string, method: "phone" | "email") => void;
 
   // Messaging actions
-  sendMessage: (senderId: string, senderName: string, receiverId: string, text: string) => void;
+  sendMessage: (
+    senderId: string,
+    senderName: string,
+    receiverId: string,
+    text: string,
+  ) => void;
   editMessage: (messageId: string, newText: string) => void;
   deleteMessage: (messageId: string) => void;
   deleteInbox: (partnerId: string) => void;
 
-  
   // Feedback actions
-  submitReport: (userId: string, userName: string, category: FeedbackReport["category"], message: string) => void;
+  submitReport: (
+    userId: string,
+    userName: string,
+    category: FeedbackReport["category"],
+    message: string,
+  ) => void;
   deleteReport: (reportId: string) => void;
+  resetStore: () => void;
 }
 
 const FOUR_MONTHS_MS = 120 * 24 * 60 * 60 * 1000;
@@ -117,16 +132,14 @@ const FOUR_MONTHS_MS = 120 * 24 * 60 * 60 * 1000;
 export const useLocalDb = create<LocalDbState>()(
   persist(
     (set, get) => ({
-      currentUser: null,
-      language: "en",
-      theme: "light",
-      users: [
-        { id: "admin-1", email: "admin@bloodconnect.org", name: "System Admin", role: "admin", password: "admin123", isVerified: true },
-      ],
+      users: [],
       donors: [],
       shops: [],
       messages: [],
       reports: [],
+      currentUser: null,
+      language: "en",
+      theme: "light",
       setLanguage: (lang) => set({ language: lang }),
       setTheme: (t) => {
         set({ theme: t });
@@ -137,27 +150,50 @@ export const useLocalDb = create<LocalDbState>()(
           document.documentElement.classList.remove("dark");
         }
       },
-      setCurrentUser: (user) =>
-        set({ currentUser: user }),
+      setCurrentUser: (user) => set({ currentUser: user }),
+      resetStore: () =>
+        set({
+          users: [],
+          donors: [],
+          shops: [],
+          messages: [],
+          reports: [],
+          currentUser: null,
+        }),
       updatePassword: (userId: string, newPassword: string) =>
         set((state) => ({
-          users: state.users.map((u) => (u.id === userId ? { ...u, password: newPassword } : u)),
+          users: state.users.map((u) =>
+            u.id === userId ? { ...u, password: newPassword } : u,
+          ),
         })),
-      registerUser: (email, name, role, password) =>
-        {
-          const id = Math.random().toString(36).substring(2, 9);
-          const newUser: LocalUser = { id, email, name, role, password: password || "password123", isVerified: false };
-          set((state) => ({ users: [...state.users, newUser] }));
-          return newUser;
-        },
+      registerUser: (email, name, role, password) => {
+        const id = Math.random().toString(36).substring(2, 9);
+        const newUser: LocalUser = {
+          id,
+          email,
+          name,
+          role,
+          password: password || "password123",
+          isVerified: false,
+        };
+        set((state) => ({ users: [...state.users, newUser] }));
+        return newUser;
+      },
       verifyUser: (userId) =>
         set((state) => ({
-          users: state.users.map((u) => (u.id === userId ? { ...u, isVerified: true } : u)),
-          currentUser: state.currentUser?.id === userId ? { ...state.currentUser, isVerified: true } : state.currentUser,
+          users: state.users.map((u) =>
+            u.id === userId ? { ...u, isVerified: true } : u,
+          ),
+          currentUser:
+            state.currentUser?.id === userId
+              ? { ...state.currentUser, isVerified: true }
+              : state.currentUser,
         })),
       updateUserEmail: (userId, newEmail) =>
         set((state) => ({
-          users: state.users.map((u) => (u.id === userId ? { ...u, email: newEmail } : u)),
+          users: state.users.map((u) =>
+            u.id === userId ? { ...u, email: newEmail } : u,
+          ),
         })),
       adminChangeUserRole: (userId, newRole) =>
         set((state) => {
@@ -165,26 +201,39 @@ export const useLocalDb = create<LocalDbState>()(
             console.warn("Only admin can change other users' roles");
             return state;
           }
-          const updatedUsers = state.users.map((u) => (u.id === userId ? { ...u, role: newRole } : u));
+          const updatedUsers = state.users.map((u) =>
+            u.id === userId ? { ...u, role: newRole } : u,
+          );
           const updatedCurrentUser =
-            state.currentUser && state.currentUser.id === userId ? { ...state.currentUser, role: newRole } : state.currentUser;
+            state.currentUser && state.currentUser.id === userId
+              ? { ...state.currentUser, role: newRole }
+              : state.currentUser;
           return { users: updatedUsers, currentUser: updatedCurrentUser };
         }),
       // New method to update any user's role (used by admin UI)
       updateUserRole: (userId, newRole) =>
         set((state) => {
-          const updatedUsers = state.users.map((u) => (u.id === userId ? { ...u, role: newRole } : u));
+          const updatedUsers = state.users.map((u) =>
+            u.id === userId ? { ...u, role: newRole } : u,
+          );
           const updatedCurrentUser =
-            state.currentUser && state.currentUser.id === userId ? { ...state.currentUser, role: newRole } : state.currentUser;
+            state.currentUser && state.currentUser.id === userId
+              ? { ...state.currentUser, role: newRole }
+              : state.currentUser;
           return { users: updatedUsers, currentUser: updatedCurrentUser };
         }),
       addDonor: (donor) =>
         set((state) => ({
-          donors: [...state.donors, { ...donor, isAvailable: true, donationCount: 0 }],
+          donors: [
+            ...state.donors,
+            { ...donor, isAvailable: true, donationCount: 0 },
+          ],
         })),
       updateDonor: (id, updatedFields) =>
         set((state) => ({
-          donors: state.donors.map((d) => (d.id === id ? { ...d, ...updatedFields } : d)),
+          donors: state.donors.map((d) =>
+            d.id === id ? { ...d, ...updatedFields } : d,
+          ),
         })),
       deleteDonor: (id) =>
         set((state) => {
@@ -212,7 +261,9 @@ export const useLocalDb = create<LocalDbState>()(
       verifyShop: (shopId, method) =>
         set((state) => {
           const shops = state.shops.map((s) =>
-            s.id === shopId ? { ...s, isVerified: true, verificationMethod: method } : s
+            s.id === shopId
+              ? { ...s, isVerified: true, verificationMethod: method }
+              : s,
           );
           return { shops };
         }),
@@ -227,7 +278,7 @@ export const useLocalDb = create<LocalDbState>()(
                   isAvailable: false,
                   donationCount: d.donationCount + 1,
                 }
-              : d
+              : d,
           ),
         }));
       },
@@ -247,21 +298,26 @@ export const useLocalDb = create<LocalDbState>()(
       addShop: (shop) => {
         const id = "shop-" + Math.random().toString(36).substring(2, 9);
         // New shops start as unverified; verification must be performed separately
-        const newShop = { ...shop, id, isVerified: false, verificationMethod: undefined };
+        const newShop = {
+          ...shop,
+          id,
+          isVerified: false,
+          verificationMethod: undefined,
+        };
         set((state) => ({
           shops: [...state.shops, newShop],
         }));
       },
       updateShop: (id, updatedFields) =>
         set((state) => ({
-          shops: state.shops.map((s) => (s.id === id ? { ...s, ...updatedFields } : s)),
+          shops: state.shops.map((s) =>
+            s.id === id ? { ...s, ...updatedFields } : s,
+          ),
         })),
       addShopProduct: (shopId, product) =>
         set((state) => ({
           shops: state.shops.map((s) =>
-            s.id === shopId
-              ? { ...s, products: [...s.products, product] }
-              : s
+            s.id === shopId ? { ...s, products: [...s.products, product] } : s,
           ),
         })),
       removeShopProduct: (shopId, index) =>
@@ -272,12 +328,19 @@ export const useLocalDb = create<LocalDbState>()(
                   ...s,
                   products: s.products.filter((_, idx) => idx !== index),
                 }
-              : s
+              : s,
           ),
         })),
       sendMessage: (senderId, senderName, receiverId, text) => {
         const id = "msg-" + Math.random().toString(36).substring(2, 9);
-        const newMsg: ChatMessage = { id, senderId, senderName, receiverId, text, timestamp: Date.now() };
+        const newMsg: ChatMessage = {
+          id,
+          senderId,
+          senderName,
+          receiverId,
+          text,
+          timestamp: Date.now(),
+        };
         set((state) => ({
           messages: [...state.messages, newMsg],
         }));
@@ -285,7 +348,9 @@ export const useLocalDb = create<LocalDbState>()(
       editMessage: (messageId, newText) => {
         set((state) => ({
           messages: state.messages.map((m) =>
-            m.id === messageId ? { ...m, text: newText, timestamp: Date.now() } : m
+            m.id === messageId
+              ? { ...m, text: newText, timestamp: Date.now() }
+              : m,
           ),
         }));
       },
@@ -293,11 +358,12 @@ export const useLocalDb = create<LocalDbState>()(
         const currentUserId = get().currentUser?.id;
         if (!currentUserId) return;
         set((state) => ({
-          messages: state.messages.filter((m) =>
-            !(
-              (m.senderId === currentUserId && m.receiverId === partnerId) ||
-              (m.senderId === partnerId && m.receiverId === currentUserId)
-            )
+          messages: state.messages.filter(
+            (m) =>
+              !(
+                (m.senderId === currentUserId && m.receiverId === partnerId) ||
+                (m.senderId === partnerId && m.receiverId === currentUserId)
+              ),
           ),
         }));
       },
@@ -309,7 +375,14 @@ export const useLocalDb = create<LocalDbState>()(
       },
       submitReport: (userId, userName, category, message) => {
         const id = "rep-" + Math.random().toString(36).substring(2, 9);
-        const newReport: FeedbackReport = { id, userId, userName, category, message, timestamp: Date.now() };
+        const newReport: FeedbackReport = {
+          id,
+          userId,
+          userName,
+          category,
+          message,
+          timestamp: Date.now(),
+        };
         set((state) => ({
           reports: [...state.reports, newReport],
         }));
@@ -321,6 +394,6 @@ export const useLocalDb = create<LocalDbState>()(
     }),
     {
       name: "blood-connect-db",
-    }
-  )
+    },
+  ),
 );

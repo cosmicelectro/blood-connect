@@ -1,22 +1,25 @@
 import {
+  Navigate,
   Outlet,
   RouterProvider,
   createRootRoute,
   createRoute,
   createRouter,
 } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { Layout } from "./components/Layout";
+import { useAuth } from "./hooks/useAuth";
+import { useLocalDb } from "./hooks/useLocalDb";
+import { AdminDashboard } from "./pages/AdminDashboard";
+import { AuthPage } from "./pages/AuthPage";
+import { ChatPage } from "./pages/ChatPage";
 import { DonorDashboard } from "./pages/DonorDashboard";
 import { DonorRegisterPage } from "./pages/DonorRegisterPage";
-import { SearchPage } from "./pages/SearchPage";
-import { ShopsPage } from "./pages/ShopsPage";
-import { AuthPage } from "./pages/AuthPage";
-import { AdminDashboard } from "./pages/AdminDashboard";
-import { ShopkeeperDashboard } from "./pages/ShopkeeperDashboard";
-import { ChatPage } from "./pages/ChatPage";
-import { useAuth } from "./hooks/useAuth";
-import { Navigate } from "@tanstack/react-router";
 import { ProfilePage } from "./pages/ProfilePage";
+import { SearchPage } from "./pages/SearchPage";
+import { ShopkeeperDashboard } from "./pages/ShopkeeperDashboard";
+import { ShopsPage } from "./pages/ShopsPage";
+
 const rootRoute = createRootRoute({
   component: () => (
     <Layout>
@@ -36,7 +39,6 @@ const shopsRoute = createRoute({
   path: "/shops",
   component: ShopsPage,
 });
-
 
 const donorRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -103,8 +105,6 @@ const authRoute = createRoute({
   component: AuthPage,
 });
 
-
-
 const routeTree = rootRoute.addChildren([
   indexRoute,
   shopsRoute,
@@ -126,5 +126,13 @@ declare module "@tanstack/react-router" {
 }
 
 export default function App() {
+  const { resetStore } = useLocalDb();
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === "development") {
+      resetStore();
+    }
+  }, [resetStore]);
+
   return <RouterProvider router={router} />;
 }

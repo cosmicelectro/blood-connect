@@ -9,25 +9,39 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ExternalLink, MapPin, Phone, Plus, ShoppingBag, Search, Tag, MessageSquare } from "lucide-react";
+import {
+  ExternalLink,
+  MapPin,
+  MessageSquare,
+  Phone,
+  Plus,
+  Search,
+  ShoppingBag,
+  Tag,
+} from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { ChatDialog } from "../components/ChatDialog";
 import { ErrorMessage } from "../components/ErrorMessage";
 import { LoadingSpinner } from "../components/LoadingSpinner";
-import { useAddShop, useShops } from "../hooks/useBackend";
 import { useAuth } from "../hooks/useAuth";
-import { useTranslate } from "../lib/translations";
-import { ChatDialog } from "../components/ChatDialog";
+import { useAddShop, useShops } from "../hooks/useBackend";
 
-function ShopCard({ shop, index, onChat, isLoggedIn, currentUserId }: { 
-  shop: any; 
-  index: number; 
+function ShopCard({
+  shop,
+  index,
+  onChat,
+  isLoggedIn,
+  currentUserId,
+}: {
+  shop: any;
+  index: number;
   onChat: (id: string, name: string) => void;
   isLoggedIn: boolean;
   currentUserId?: string;
 }) {
-  const { language } = useAuth();
-  const t = useTranslate(language);
+  const { t } = useTranslation();
 
   return (
     <article
@@ -52,9 +66,11 @@ function ShopCard({ shop, index, onChat, isLoggedIn, currentUserId }: {
             </a>
           )}
         </div>
-        
+
         <h3 className="heading-md mb-1">{shop.name}</h3>
-        <p className="body-sm mb-3 line-clamp-2 text-muted-foreground">{shop.description}</p>
+        <p className="body-sm mb-3 line-clamp-2 text-muted-foreground">
+          {shop.description}
+        </p>
 
         {/* Product Catalog Display */}
         <div className="my-4 border-t border-b border-border/50 py-3">
@@ -64,9 +80,16 @@ function ShopCard({ shop, index, onChat, isLoggedIn, currentUserId }: {
           {shop.products && shop.products.length > 0 ? (
             <div className="space-y-1.5 max-h-[140px] overflow-y-auto scrollbar-thin">
               {shop.products.map((p: any, idx: number) => (
-                <div key={p.name + "-" + idx} className="flex justify-between items-center text-xs border-b border-border/30 pb-1 last:border-0 last:pb-0">
-                  <span className="font-medium truncate max-w-[170px]">{p.name}</span>
-                  <span className="font-bold text-primary font-mono">{p.price.toLocaleString()} BDT</span>
+                <div
+                  key={p.name + "-" + idx}
+                  className="flex justify-between items-center text-xs border-b border-border/30 pb-1 last:border-0 last:pb-0"
+                >
+                  <span className="font-medium truncate max-w-[170px]">
+                    {p.name}
+                  </span>
+                  <span className="font-bold text-primary font-mono">
+                    {p.price.toLocaleString()} BDT
+                  </span>
                 </div>
               ))}
             </div>
@@ -243,21 +266,27 @@ export function ShopsPage() {
   const { data: shops, isLoading, error, refetch } = useShops();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  
+
   // Messaging state
-  const [chatTarget, setChatTarget] = useState<{ id: string; name: string } | null>(null);
+  const [chatTarget, setChatTarget] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
-  const { role, isLoggedIn, user, language } = useAuth();
-  const t = useTranslate(language);
+  const { role, isLoggedIn, user } = useAuth();
+  const { t } = useTranslation();
 
-  const isShopkeeperOrAdmin = isLoggedIn && (role === "admin" || role === "shopkeeper");
+  const isShopkeeperOrAdmin =
+    isLoggedIn && (role === "admin" || role === "shopkeeper");
 
   const filteredShops = (shops || []).filter(
     (s) =>
       s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.products.some((p: any) => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      s.products.some((p: any) =>
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()),
+      ),
   );
 
   return (
@@ -317,9 +346,7 @@ export function ShopsPage() {
             aria-hidden="true"
           />
           <p className="heading-md">{t("noShops")}</p>
-          <p className="body-sm max-w-sm">
-            {t("noShopsDesc")}
-          </p>
+          <p className="body-sm max-w-sm">{t("noShopsDesc")}</p>
         </div>
       )}
 
@@ -329,10 +356,10 @@ export function ShopsPage() {
           data-ocid="shops.list"
         >
           {filteredShops.map((shop, i) => (
-            <ShopCard 
-              key={shop.id.toString()} 
-              shop={shop} 
-              index={i} 
+            <ShopCard
+              key={shop.id.toString()}
+              shop={shop}
+              index={i}
               onChat={(id, name) => setChatTarget({ id, name })}
               isLoggedIn={isLoggedIn}
               currentUserId={user?.id}

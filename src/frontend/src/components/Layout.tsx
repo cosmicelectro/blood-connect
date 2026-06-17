@@ -1,9 +1,21 @@
 import { Button } from "@/components/ui/button";
-import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Droplets, Menu, X, ShieldAlert, Store, Heart, User, LogOut, RefreshCw, Sun, Moon } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import {
+  Droplets,
+  Heart,
+  LogOut,
+  Menu,
+  Moon,
+  RefreshCw,
+  ShieldAlert,
+  Store,
+  Sun,
+  User,
+  X,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../hooks/useAuth";
-import { useTranslate } from "../lib/translations";
 import { ReportDialog } from "./ReportDialog";
 
 interface LayoutProps {
@@ -13,7 +25,7 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
-  
+
   const {
     isLoading,
     isLoggedIn,
@@ -26,11 +38,11 @@ export function Layout({ children }: LayoutProps) {
     setLanguage,
     setTheme,
   } = useAuth();
-  
+
   const routerState = useRouterState();
   const navigate = useNavigate();
   const currentPath = routerState.location.pathname;
-  const t = useTranslate(language);
+  const { t } = useTranslation();
 
   // Sync dark theme on load
   useEffect(() => {
@@ -48,7 +60,10 @@ export function Layout({ children }: LayoutProps) {
   ];
 
   if (isLoggedIn) {
-    navItems.push({ to: "/chat", label: language === "bn" ? "মেসেজ" : "Messages" });
+    navItems.push({
+      to: "/chat",
+      label: language === "bn" ? "মেসেজ" : "Messages",
+    });
     if (role === "admin") {
       navItems.push({ to: "/admin", label: t("adminPanel") });
     } else if (role === "donor") {
@@ -62,10 +77,14 @@ export function Layout({ children }: LayoutProps) {
 
   const getRoleBadgeColor = () => {
     switch (role) {
-      case "admin": return "bg-red-500 text-white";
-      case "shopkeeper": return "bg-blue-600 text-white";
-      case "donor": return "bg-primary text-white";
-      default: return "bg-emerald-600 text-white";
+      case "admin":
+        return "bg-red-500 text-white";
+      case "shopkeeper":
+        return "bg-blue-600 text-white";
+      case "donor":
+        return "bg-primary text-white";
+      default:
+        return "bg-emerald-600 text-white";
     }
   };
 
@@ -74,7 +93,6 @@ export function Layout({ children }: LayoutProps) {
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border bg-card shadow-sm">
         <div className="mx-auto flex h-16 w-full max-w-[1400px] items-center justify-between px-4">
-          
           {/* Brand */}
           <Link
             to="/"
@@ -89,9 +107,13 @@ export function Layout({ children }: LayoutProps) {
             </div>
             <span className="font-display text-xl font-bold tracking-tight">
               {language === "en" ? (
-                <>Blood<span className="text-primary">Connect</span></>
+                <>
+                  Blood<span className="text-primary">Connect</span>
+                </>
               ) : (
-                <>ব্লাড<span className="text-primary">কানেক্ট</span></>
+                <>
+                  ব্লাড<span className="text-primary">কানেক্ট</span>
+                </>
               )}
             </span>
           </Link>
@@ -118,7 +140,6 @@ export function Layout({ children }: LayoutProps) {
 
           {/* Global Controls & Auth Actions */}
           <div className="hidden items-center gap-2 lg:gap-3 md:flex">
-            
             {/* Report Button */}
             {isLoggedIn && (
               <Button
@@ -147,13 +168,19 @@ export function Layout({ children }: LayoutProps) {
               className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
               aria-label="Toggle Theme"
             >
-              {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4 text-amber-500" />}
+              {theme === "light" ? (
+                <Moon className="h-4 w-4" />
+              ) : (
+                <Sun className="h-4 w-4 text-amber-500" />
+              )}
             </button>
 
             {/* Auth Actions */}
             {isLoggedIn ? (
               <div className="relative flex items-center gap-2">
-                <div className={`flex items-center gap-1.5 rounded-full px-2 lg:px-3 py-1 text-xs font-semibold uppercase tracking-wider ${getRoleBadgeColor()}`}>
+                <div
+                  className={`flex items-center gap-1.5 rounded-full px-2 lg:px-3 py-1 text-xs font-semibold uppercase tracking-wider ${getRoleBadgeColor()}`}
+                >
                   <RefreshCw className="h-3 w-3 hidden lg:block" />
                   {role}
                 </div>
@@ -190,7 +217,11 @@ export function Layout({ children }: LayoutProps) {
               onClick={() => setTheme(theme === "light" ? "dark" : "light")}
               className="p-2 rounded text-muted-foreground"
             >
-              {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4 text-amber-500" />}
+              {theme === "light" ? (
+                <Moon className="h-4 w-4" />
+              ) : (
+                <Sun className="h-4 w-4 text-amber-500" />
+              )}
             </button>
             <button
               type="button"
@@ -198,7 +229,11 @@ export function Layout({ children }: LayoutProps) {
               onClick={() => setMenuOpen((v) => !v)}
               aria-label="Open menu"
             >
-              {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {menuOpen ? (
+                <X className="h-5 w-5" />
+              ) : (
+                <Menu className="h-5 w-5" />
+              )}
             </button>
           </div>
         </div>
@@ -219,7 +254,9 @@ export function Layout({ children }: LayoutProps) {
               ))}
 
               <div className="flex items-center justify-between border-t border-border mt-2 pt-2 px-3">
-                <span className="text-xs text-muted-foreground">Language / ভাষা</span>
+                <span className="text-xs text-muted-foreground">
+                  Language / ভাষা
+                </span>
                 <select
                   className="border border-border bg-card text-xs rounded p-1"
                   value={language}
@@ -292,9 +329,13 @@ export function Layout({ children }: LayoutProps) {
               </div>
               <span className="font-display font-semibold">
                 {language === "en" ? (
-                  <>Blood<span className="text-primary">Connect</span></>
+                  <>
+                    Blood<span className="text-primary">Connect</span>
+                  </>
                 ) : (
-                  <>ব্লাড<span className="text-primary">কানেক্ট</span></>
+                  <>
+                    ব্লাড<span className="text-primary">কানেক্ট</span>
+                  </>
                 )}
               </span>
             </div>

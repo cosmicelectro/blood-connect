@@ -1,32 +1,44 @@
-import { useState } from "react";
-import { useLocalDb, LocalDonor, LocalShop } from "../hooks/useLocalDb";
-import { useReports, useDeleteReport } from "../hooks/useBackend";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Users,
-  Store,
+  Activity,
   Calendar,
   CheckCircle,
-  XCircle,
-  Plus,
-  Trash2,
   Edit,
-  Activity,
   HeartPulse,
   MessageSquareWarning,
+  Plus,
+  Store,
+  Trash2,
+  Users,
+  XCircle,
 } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
+import { useDeleteReport, useReports } from "../hooks/useBackend";
+import {
+  type LocalDonor,
+  type LocalShop,
+  useLocalDb,
+} from "../hooks/useLocalDb";
 
 export function AdminDashboard() {
-  const { donors, shops, deleteDonor, updateDonor, deleteShop, addShop, updateShop } = useLocalDb();
+  const {
+    donors,
+    shops,
+    deleteDonor,
+    updateDonor,
+    deleteShop,
+    addShop,
+    updateShop,
+  } = useLocalDb();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [editingDonor, setEditingDonor] = useState<LocalDonor | null>(null);
   const [editingShop, setEditingShop] = useState<LocalShop | null>(null);
-  
+
   const { data: reports = [] } = useReports();
   const deleteReport = useDeleteReport();
 
@@ -96,7 +108,13 @@ export function AdminDashboard() {
       website: newShopForm.website || undefined,
       products: [],
     });
-    setNewShopForm({ name: "", description: "", address: "", phone: "", website: "" });
+    setNewShopForm({
+      name: "",
+      description: "",
+      address: "",
+      phone: "",
+      website: "",
+    });
     toast.success("New medical shop registered!");
   };
 
@@ -104,17 +122,21 @@ export function AdminDashboard() {
     (d) =>
       d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       d.bloodType.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      d.address.toLowerCase().includes(searchQuery.toLowerCase())
+      d.address.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 space-y-8" data-ocid="admin.page">
+    <div
+      className="mx-auto max-w-6xl px-4 py-8 space-y-8"
+      data-ocid="admin.page"
+    >
       <div className="border-b border-border pb-4">
         <h1 className="text-3xl font-display font-bold text-foreground tracking-tight">
           Admin Control Center
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Monitor and manage users, donors, medical shops, and clinical inventory.
+          Monitor and manage users, donors, medical shops, and clinical
+          inventory.
         </p>
       </div>
 
@@ -125,7 +147,9 @@ export function AdminDashboard() {
             <Users className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total Donors</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Total Donors
+            </p>
             <p className="text-2xl font-bold font-display">{donors.length}</p>
           </div>
         </div>
@@ -135,8 +159,12 @@ export function AdminDashboard() {
             <CheckCircle className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Active & Ready</p>
-            <p className="text-2xl font-bold font-display">{availableDonorsCount}</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Active & Ready
+            </p>
+            <p className="text-2xl font-bold font-display">
+              {availableDonorsCount}
+            </p>
           </div>
         </div>
 
@@ -145,7 +173,9 @@ export function AdminDashboard() {
             <Store className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Medical Shops</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Medical Shops
+            </p>
             <p className="text-2xl font-bold font-display">{shops.length}</p>
           </div>
         </div>
@@ -155,7 +185,9 @@ export function AdminDashboard() {
             <MessageSquareWarning className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Active Reports</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Active Reports
+            </p>
             <p className="text-2xl font-bold font-display">{reports.length}</p>
           </div>
         </div>
@@ -193,10 +225,15 @@ export function AdminDashboard() {
                 </thead>
                 <tbody>
                   {filteredDonors.map((donor) => (
-                    <tr key={donor.id} className="border-b border-border/60 hover:bg-muted/15">
+                    <tr
+                      key={donor.id}
+                      className="border-b border-border/60 hover:bg-muted/15"
+                    >
                       <td className="py-3 font-semibold">
                         {donor.name}
-                        <div className="text-xs font-normal text-muted-foreground">{donor.address}</div>
+                        <div className="text-xs font-normal text-muted-foreground">
+                          {donor.address}
+                        </div>
                       </td>
                       <td className="py-3 text-center">
                         <span className="bg-primary/10 text-primary font-mono font-bold px-2 py-0.5 rounded text-xs">
@@ -207,7 +244,12 @@ export function AdminDashboard() {
                       <td className="py-3">
                         <button
                           type="button"
-                          onClick={() => handleToggleDonorAvailability(donor.id, donor.isAvailable)}
+                          onClick={() =>
+                            handleToggleDonorAvailability(
+                              donor.id,
+                              donor.isAvailable,
+                            )
+                          }
                           className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${
                             donor.isAvailable
                               ? "bg-emerald-500/10 text-emerald-600"
@@ -237,7 +279,10 @@ export function AdminDashboard() {
                   ))}
                   {filteredDonors.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="text-center py-6 text-muted-foreground">
+                      <td
+                        colSpan={5}
+                        className="text-center py-6 text-muted-foreground"
+                      >
                         No donors found matching criteria.
                       </td>
                     </tr>
@@ -255,24 +300,42 @@ export function AdminDashboard() {
             </h2>
             <div className="grid gap-4 sm:grid-cols-2">
               {shops.map((shop) => (
-                <div key={shop.id} className="border border-border p-4 rounded-lg flex flex-col justify-between hover:shadow-sm">
+                <div
+                  key={shop.id}
+                  className="border border-border p-4 rounded-lg flex flex-col justify-between hover:shadow-sm"
+                >
                   <div>
                     <h3 className="font-bold text-base">{shop.name}</h3>
-                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{shop.description}</p>
-                    <p className="text-xs mt-2 font-mono text-muted-foreground">{shop.address} | {shop.phone}</p>
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                      {shop.description}
+                    </p>
+                    <p className="text-xs mt-2 font-mono text-muted-foreground">
+                      {shop.address} | {shop.phone}
+                    </p>
                     {shop.products.length > 0 && (
                       <div className="mt-2 text-xs">
                         <span className="font-semibold">Products: </span>
-                        {shop.products.slice(0, 3).map((p) => p.name).join(", ")}
+                        {shop.products
+                          .slice(0, 3)
+                          .map((p) => p.name)
+                          .join(", ")}
                         {shop.products.length > 3 && " ..."}
                       </div>
                     )}
                   </div>
                   <div className="flex gap-2 justify-end mt-4">
-                    <Button variant="outline" size="sm" onClick={() => setEditingShop(shop)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditingShop(shop)}
+                    >
                       <Edit className="h-3.5 w-3.5 mr-1" /> Edit
                     </Button>
-                    <Button variant="destructive" size="sm" onClick={() => handleDeleteShop(shop.id)}>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeleteShop(shop.id)}
+                    >
                       <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
                     </Button>
                   </div>
@@ -298,7 +361,9 @@ export function AdminDashboard() {
                   placeholder="Medical Supply Store Name"
                   required
                   value={newShopForm.name}
-                  onChange={(e) => setNewShopForm({ ...newShopForm, name: e.target.value })}
+                  onChange={(e) =>
+                    setNewShopForm({ ...newShopForm, name: e.target.value })
+                  }
                 />
               </div>
               <div className="space-y-1">
@@ -309,7 +374,12 @@ export function AdminDashboard() {
                   required
                   rows={2}
                   value={newShopForm.description}
-                  onChange={(e) => setNewShopForm({ ...newShopForm, description: e.target.value })}
+                  onChange={(e) =>
+                    setNewShopForm({
+                      ...newShopForm,
+                      description: e.target.value,
+                    })
+                  }
                 />
               </div>
               <div className="space-y-1">
@@ -319,7 +389,9 @@ export function AdminDashboard() {
                   placeholder="Dhanmondi, Dhaka"
                   required
                   value={newShopForm.address}
-                  onChange={(e) => setNewShopForm({ ...newShopForm, address: e.target.value })}
+                  onChange={(e) =>
+                    setNewShopForm({ ...newShopForm, address: e.target.value })
+                  }
                 />
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -330,7 +402,9 @@ export function AdminDashboard() {
                     placeholder="Phone number"
                     required
                     value={newShopForm.phone}
-                    onChange={(e) => setNewShopForm({ ...newShopForm, phone: e.target.value })}
+                    onChange={(e) =>
+                      setNewShopForm({ ...newShopForm, phone: e.target.value })
+                    }
                   />
                 </div>
                 <div className="space-y-1">
@@ -339,11 +413,18 @@ export function AdminDashboard() {
                     id="s-web"
                     placeholder="URL"
                     value={newShopForm.website}
-                    onChange={(e) => setNewShopForm({ ...newShopForm, website: e.target.value })}
+                    onChange={(e) =>
+                      setNewShopForm({
+                        ...newShopForm,
+                        website: e.target.value,
+                      })
+                    }
                   />
                 </div>
               </div>
-              <Button type="submit" className="w-full mt-2">Create Shop</Button>
+              <Button type="submit" className="w-full mt-2">
+                Create Shop
+              </Button>
             </form>
           </div>
 
@@ -355,17 +436,34 @@ export function AdminDashboard() {
             </h2>
             <div className="space-y-3">
               {reports.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No pending reports.</p>
+                <p className="text-sm text-muted-foreground">
+                  No pending reports.
+                </p>
               ) : (
                 reports.map((r) => (
-                  <div key={r.id} className="border border-border rounded-lg p-3 text-sm flex flex-col gap-2">
+                  <div
+                    key={r.id}
+                    className="border border-border rounded-lg p-3 text-sm flex flex-col gap-2"
+                  >
                     <div className="flex justify-between items-start">
-                      <span className="font-semibold">{r.userName} <span className="text-xs font-normal text-muted-foreground bg-muted px-1.5 py-0.5 rounded ml-1">{r.category}</span></span>
-                      <span className="text-[10px] text-muted-foreground">{new Date(r.timestamp).toLocaleDateString()}</span>
+                      <span className="font-semibold">
+                        {r.userName}{" "}
+                        <span className="text-xs font-normal text-muted-foreground bg-muted px-1.5 py-0.5 rounded ml-1">
+                          {r.category}
+                        </span>
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {new Date(r.timestamp).toLocaleDateString()}
+                      </span>
                     </div>
                     <p className="text-muted-foreground">{r.message}</p>
                     <div className="flex justify-end mt-1">
-                      <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => deleteReport.mutate(r.id)}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs"
+                        onClick={() => deleteReport.mutate(r.id)}
+                      >
                         Resolve / Dismiss
                       </Button>
                     </div>
@@ -380,15 +478,22 @@ export function AdminDashboard() {
       {/* Editing Donor Modal */}
       {editingDonor && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <form onSubmit={handleSaveDonorEdit} className="w-full max-w-md bg-card border border-border p-6 rounded-xl space-y-4">
-            <h3 className="text-lg font-bold font-display">Edit Donor Profile</h3>
+          <form
+            onSubmit={handleSaveDonorEdit}
+            className="w-full max-w-md bg-card border border-border p-6 rounded-xl space-y-4"
+          >
+            <h3 className="text-lg font-bold font-display">
+              Edit Donor Profile
+            </h3>
             <div className="space-y-2">
               <div>
                 <Label>Full Name</Label>
                 <Input
                   required
                   value={editingDonor.name}
-                  onChange={(e) => setEditingDonor({ ...editingDonor, name: e.target.value })}
+                  onChange={(e) =>
+                    setEditingDonor({ ...editingDonor, name: e.target.value })
+                  }
                 />
               </div>
               <div>
@@ -396,11 +501,20 @@ export function AdminDashboard() {
                 <select
                   className="w-full border border-border bg-card p-2 rounded-md"
                   value={editingDonor.bloodType}
-                  onChange={(e) => setEditingDonor({ ...editingDonor, bloodType: e.target.value })}
+                  onChange={(e) =>
+                    setEditingDonor({
+                      ...editingDonor,
+                      bloodType: e.target.value,
+                    })
+                  }
                 >
-                  {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map((t) => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
+                  {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map(
+                    (t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ),
+                  )}
                 </select>
               </div>
               <div>
@@ -408,7 +522,12 @@ export function AdminDashboard() {
                 <Input
                   required
                   value={editingDonor.address}
-                  onChange={(e) => setEditingDonor({ ...editingDonor, address: e.target.value })}
+                  onChange={(e) =>
+                    setEditingDonor({
+                      ...editingDonor,
+                      address: e.target.value,
+                    })
+                  }
                 />
               </div>
               <div>
@@ -416,12 +535,20 @@ export function AdminDashboard() {
                 <Input
                   required
                   value={editingDonor.phone}
-                  onChange={(e) => setEditingDonor({ ...editingDonor, phone: e.target.value })}
+                  onChange={(e) =>
+                    setEditingDonor({ ...editingDonor, phone: e.target.value })
+                  }
                 />
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" type="button" onClick={() => setEditingDonor(null)}>Cancel</Button>
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setEditingDonor(null)}
+              >
+                Cancel
+              </Button>
               <Button type="submit">Save Changes</Button>
             </div>
           </form>
@@ -431,15 +558,22 @@ export function AdminDashboard() {
       {/* Editing Shop Modal */}
       {editingShop && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <form onSubmit={handleSaveShopEdit} className="w-full max-w-md bg-card border border-border p-6 rounded-xl space-y-4">
-            <h3 className="text-lg font-bold font-display">Edit Medical Shop</h3>
+          <form
+            onSubmit={handleSaveShopEdit}
+            className="w-full max-w-md bg-card border border-border p-6 rounded-xl space-y-4"
+          >
+            <h3 className="text-lg font-bold font-display">
+              Edit Medical Shop
+            </h3>
             <div className="space-y-2">
               <div>
                 <Label>Shop Name</Label>
                 <Input
                   required
                   value={editingShop.name}
-                  onChange={(e) => setEditingShop({ ...editingShop, name: e.target.value })}
+                  onChange={(e) =>
+                    setEditingShop({ ...editingShop, name: e.target.value })
+                  }
                 />
               </div>
               <div>
@@ -447,7 +581,12 @@ export function AdminDashboard() {
                 <Textarea
                   required
                   value={editingShop.description}
-                  onChange={(e) => setEditingShop({ ...editingShop, description: e.target.value })}
+                  onChange={(e) =>
+                    setEditingShop({
+                      ...editingShop,
+                      description: e.target.value,
+                    })
+                  }
                 />
               </div>
               <div>
@@ -455,7 +594,9 @@ export function AdminDashboard() {
                 <Input
                   required
                   value={editingShop.address}
-                  onChange={(e) => setEditingShop({ ...editingShop, address: e.target.value })}
+                  onChange={(e) =>
+                    setEditingShop({ ...editingShop, address: e.target.value })
+                  }
                 />
               </div>
               <div>
@@ -463,19 +604,29 @@ export function AdminDashboard() {
                 <Input
                   required
                   value={editingShop.phone}
-                  onChange={(e) => setEditingShop({ ...editingShop, phone: e.target.value })}
+                  onChange={(e) =>
+                    setEditingShop({ ...editingShop, phone: e.target.value })
+                  }
                 />
               </div>
               <div>
                 <Label>Website (optional)</Label>
                 <Input
                   value={editingShop.website || ""}
-                  onChange={(e) => setEditingShop({ ...editingShop, website: e.target.value })}
+                  onChange={(e) =>
+                    setEditingShop({ ...editingShop, website: e.target.value })
+                  }
                 />
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" type="button" onClick={() => setEditingShop(null)}>Cancel</Button>
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setEditingShop(null)}
+              >
+                Cancel
+              </Button>
               <Button type="submit">Save Changes</Button>
             </div>
           </form>

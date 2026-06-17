@@ -1,15 +1,16 @@
-import React, { useState } from "react";
-import { useAuth } from "../hooks/useAuth";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
 import { Eye, EyeOff, Lock } from "lucide-react";
-import { useTranslate } from "../lib/translations";
+import type React from "react";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
+import { useAuth } from "../hooks/useAuth";
 
 export function ProfilePage() {
-  const { currentUser, updatePassword, logout, language } = useAuth();
-  const t = useTranslate(language);
+  const { currentUser, updatePassword, logout } = useAuth();
+  const { t } = useTranslation();
   const [showPwd, setShowPwd] = useState(false);
 
   const [oldPwd, setOldPwd] = useState("");
@@ -47,7 +48,7 @@ export function ProfilePage() {
               id="oldPwd"
               type={showPwd ? "text" : "password"}
               value={oldPwd}
-              onChange={e => setOldPwd(e.target.value)}
+              onChange={(e) => setOldPwd(e.target.value)}
               required
             />
             <button
@@ -55,7 +56,11 @@ export function ProfilePage() {
               className="absolute right-3 top-2.5 text-muted-foreground"
               onClick={() => setShowPwd(!showPwd)}
             >
-              {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {showPwd ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
             </button>
           </div>
         </div>
@@ -66,7 +71,7 @@ export function ProfilePage() {
               id="newPwd"
               type={showPwd ? "text" : "password"}
               value={newPwd}
-              onChange={e => setNewPwd(e.target.value)}
+              onChange={(e) => setNewPwd(e.target.value)}
               required
             />
             <button
@@ -74,7 +79,11 @@ export function ProfilePage() {
               className="absolute right-3 top-2.5 text-muted-foreground"
               onClick={() => setShowPwd(!showPwd)}
             >
-              {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {showPwd ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
             </button>
           </div>
         </div>
@@ -85,7 +94,7 @@ export function ProfilePage() {
               id="confirmPwd"
               type={showPwd ? "text" : "password"}
               value={confirmPwd}
-              onChange={e => setConfirmPwd(e.target.value)}
+              onChange={(e) => setConfirmPwd(e.target.value)}
               required
             />
             <button
@@ -93,13 +102,19 @@ export function ProfilePage() {
               className="absolute right-3 top-2.5 text-muted-foreground"
               onClick={() => setShowPwd(!showPwd)}
             >
-              {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {showPwd ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
             </button>
           </div>
         </div>
         <div className="flex space-x-2 pt-2">
           <Button type="submit">Change Password</Button>
-          <Button variant="outline" onClick={logout}>Logout</Button>
+          <Button variant="outline" onClick={logout}>
+            Logout
+          </Button>
         </div>
       </form>
     </div>

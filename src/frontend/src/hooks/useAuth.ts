@@ -1,26 +1,46 @@
 import { useLocalDb } from "./useLocalDb";
 
 export function useAuth() {
-  const { currentUser, setCurrentUser, registerUser, users, language, theme, setLanguage, setTheme, updatePassword, adminChangeUserRole, verifyUser } = useLocalDb();
+  const {
+    currentUser,
+    setCurrentUser,
+    registerUser,
+    users,
+    language,
+    theme,
+    setLanguage,
+    setTheme,
+    updatePassword,
+    adminChangeUserRole,
+    verifyUser,
+  } = useLocalDb();
 
-  const loginWithOAuth = (provider: "google" | "facebook", defaultRole: "donor" | "shopkeeper" | "viewer", email?: string) => {
-  // Use provided email if given, otherwise generate a simulated one
-  const userEmail = email?.trim() ? email : `oauth-${defaultRole}@${provider}.com`;
-  let user = users.find((u) => u.email === userEmail);
-  if (!user) {
-    user = registerUser(
-      userEmail,
-      `${defaultRole.charAt(0).toUpperCase() + defaultRole.slice(1)} User`,
-      defaultRole,
-      "oauth-pass"
-    );
-  }
-  setCurrentUser(user);
-  return user;
-};
+  const loginWithOAuth = (
+    provider: "google" | "facebook",
+    defaultRole: "donor" | "shopkeeper" | "viewer",
+    email?: string,
+  ) => {
+    // Use provided email if given, otherwise generate a simulated one
+    const userEmail = email?.trim()
+      ? email
+      : `oauth-${defaultRole}@${provider}.com`;
+    let user = users.find((u) => u.email === userEmail);
+    if (!user) {
+      user = registerUser(
+        userEmail,
+        `${defaultRole.charAt(0).toUpperCase() + defaultRole.slice(1)} User`,
+        defaultRole,
+        "oauth-pass",
+      );
+    }
+    setCurrentUser(user);
+    return user;
+  };
 
   const loginWithCredentials = (email: string, password?: string) => {
-    const user = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
+    const user = users.find(
+      (u) => u.email.toLowerCase() === email.toLowerCase(),
+    );
     if (!user) {
       throw new Error("User not found. Please register a profile first.");
     }
@@ -46,9 +66,11 @@ export function useAuth() {
       area?: string;
       lat?: number;
       lng?: number;
-    }
+    },
   ) => {
-    const existing = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
+    const existing = users.find(
+      (u) => u.email.toLowerCase() === email.toLowerCase(),
+    );
     if (existing) {
       throw new Error("Email already registered. Please login instead.");
     }
@@ -58,7 +80,6 @@ export function useAuth() {
     // setCurrentUser(newUser);
     return newUser;
   };
-
 
   // Logout function to clear user session and refresh
   const logout = () => {

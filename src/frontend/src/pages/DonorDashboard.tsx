@@ -11,14 +11,14 @@ import {
   Heart,
   Loader2,
   MapPin,
+  MessageSquare,
   Phone,
   Save,
-  User,
-  XCircle,
-  MessageSquare,
   Send,
   Shield,
   Store,
+  User,
+  XCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -27,21 +27,42 @@ import { ErrorMessage } from "../components/ErrorMessage";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { StatusBadge } from "../components/StatusBadge";
 import { useAuth } from "../hooks/useAuth";
-import { useEditMessage } from "../hooks/useBackend";
+
 import {
-  useLogDonation,
-  useMyProfile,
-  useUpdateProfile,
-  useMessages,
-  useSendMessage,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useTranslation } from "react-i18next";
+import { RoleIcon } from "../components/RoleIcon";
+import {
+  DISTRICTS_BY_DIVISION,
+  DIVISIONS,
+  SUBDISTRICTS_BY_DISTRICT,
+} from "../data/locationData";
+import {
   useDeleteInbox,
-  useUsers,
   useEditMessage,
+  useLogDonation,
+  useMessages,
+  useMyProfile,
+  useSendMessage,
+  useUpdateProfile,
+  useUsers,
 } from "../hooks/useBackend";
-import { useTranslate } from "../lib/translations";
-import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
-
-
 
 function InfoRow({
   icon,
@@ -192,33 +213,69 @@ function EditProfilePanel({
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="edit-division">Division</Label>
-          <Input
-            id="edit-division"
+          <Select
             value={form.division}
-            onChange={(e) => set("division", e.target.value)}
-            placeholder="e.g. Dhaka"
-          />
+            onValueChange={(value) => {
+              set("division", value);
+              set("district", "");
+              set("subDistrict", "");
+            }}
+          >
+            <SelectTrigger id="edit-division" className="w-full">
+              <SelectValue placeholder="Select Division" />
+            </SelectTrigger>
+            <SelectContent>
+              {DIVISIONS.map((div) => (
+                <SelectItem key={div} value={div}>
+                  {div}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="edit-district">District</Label>
-          <Input
-            id="edit-district"
+          <Select
             value={form.district}
-            onChange={(e) => set("district", e.target.value)}
-            placeholder="e.g. Dhaka"
-          />
+            onValueChange={(value) => {
+              set("district", value);
+              set("subDistrict", "");
+            }}
+            disabled={!form.division}
+          >
+            <SelectTrigger id="edit-district" className="w-full">
+              <SelectValue placeholder="Select District" />
+            </SelectTrigger>
+            <SelectContent>
+              {(DISTRICTS_BY_DIVISION[form.division] || []).map((dist) => (
+                <SelectItem key={dist} value={dist}>
+                  {dist}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="edit-subDistrict">Sub-district / Upazila</Label>
-          <Input
-            id="edit-subDistrict"
+          <Select
             value={form.subDistrict}
-            onChange={(e) => set("subDistrict", e.target.value)}
-            placeholder="e.g. Dhanmondi"
-          />
+            onValueChange={(value) => set("subDistrict", value)}
+            disabled={!form.district}
+          >
+            <SelectTrigger id="edit-subDistrict" className="w-full">
+              <SelectValue placeholder="Select Sub-district" />
+            </SelectTrigger>
+            <SelectContent>
+              {(SUBDISTRICTS_BY_DISTRICT[form.district] || []).map((sub) => (
+                <SelectItem key={sub} value={sub}>
+                  {sub}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="edit-area">Area / Ward</Label>
@@ -278,7 +335,11 @@ function EditProfilePanel({
         >
           Cancel
         </Button>
-        <Button type="submit" className="gap-2" data-ocid="donor.edit_save_button">
+        <Button
+          type="submit"
+          className="gap-2"
+          data-ocid="donor.edit_save_button"
+        >
           <Save className="h-4 w-4" aria-hidden />
           Save Changes
         </Button>
@@ -289,7 +350,7 @@ function EditProfilePanel({
 
 export function DonorDashboard() {
   const { language } = useAuth();
-  const t = useTranslate(language);
+  const { t } = useTranslation();
 
   const { data: profile, isLoading, error, refetch } = useMyProfile();
   const [isEditing, setIsEditing] = useState(false);
@@ -301,14 +362,15 @@ export function DonorDashboard() {
   // Chat Inbox states for Donor
   const { data: messages } = useMessages(profile?.id || "");
   const sendMessage = useSendMessage();
-  const { data: users } = useUsers();
   const deleteInbox = useDeleteInbox();
-  const [selectedThreadSenderId, setSelectedThreadSenderId] = useState<string | null>(null);
+  const { data: users } = useUsers();
+  const [selectedThreadSenderId, setSelectedThreadSenderId] = useState<
+    string | null
+  >(null);
   const [replyText, setReplyText] = useState("");
-const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
-const [editingText, setEditingText] = useState("");
-const editMessage = useEditMessage();
-
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState("");
+  const editMessage = useEditMessage();
   const [donationDateOption, setDonationDateOption] = useState<string>("today");
 
   const handleLogDonation = async () => {
@@ -330,7 +392,10 @@ const editMessage = useEditMessage();
     }
 
     try {
-      const result = await logDonation.mutateAsync({ id: profile.id, date: finalTimestamp });
+      const result = await logDonation.mutateAsync({
+        id: profile.id,
+        date: finalTimestamp,
+      });
       if (result.__kind__ === "ok") {
         toast.success(
           donationDateOption === "4months"
@@ -353,7 +418,9 @@ const editMessage = useEditMessage();
     if (!replyText.trim() || !selectedThreadSenderId) return;
 
     // Find the sender's name from messages list
-    const firstMsg = (messages || []).find((m) => m.senderId === selectedThreadSenderId);
+    const firstMsg = (messages || []).find(
+      (m) => m.senderId === selectedThreadSenderId,
+    );
     const senderName = firstMsg ? firstMsg.senderName : "User Seeker";
 
     await sendMessage.mutateAsync({
@@ -368,7 +435,8 @@ const editMessage = useEditMessage();
   // Group messages by sender id
   const chatThreadsMap = new Map();
   (messages || []).forEach((m) => {
-    const threadPartnerId = m.senderId === profile?.id ? m.receiverId : m.senderId;
+    const threadPartnerId =
+      m.senderId === profile?.id ? m.receiverId : m.senderId;
     if (!chatThreadsMap.has(threadPartnerId)) {
       chatThreadsMap.set(threadPartnerId, {
         partnerName: m.senderId === profile?.id ? "User Seeker" : m.senderName,
@@ -401,13 +469,17 @@ const editMessage = useEditMessage();
 
   if (!profile) {
     return (
-      <div className="mx-auto max-w-md px-4 py-20 text-center" data-ocid="donor.unregistered_state">
+      <div
+        className="mx-auto max-w-md px-4 py-20 text-center"
+        data-ocid="donor.unregistered_state"
+      >
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
           <Droplets className="h-8 w-8 text-primary" aria-hidden />
         </div>
         <h1 className="heading-xl mb-3">Become a Blood Donor</h1>
         <p className="body-sm mb-8">
-          You're not registered as a donor yet. Join our network to help people in need find life-saving blood near them.
+          You're not registered as a donor yet. Join our network to help people
+          in need find life-saving blood near them.
         </p>
         <Link to="/donor/register">
           <Button size="lg" className="gap-2" data-ocid="donor.register_button">
@@ -419,20 +491,26 @@ const editMessage = useEditMessage();
     );
   }
 
-  const selectedThreadMessages = selectedThreadSenderId 
+  const selectedThreadMessages = selectedThreadSenderId
     ? (messages || []).filter(
         (m) =>
-          (m.senderId === profile.id && m.receiverId === selectedThreadSenderId) ||
-          (m.senderId === selectedThreadSenderId && m.receiverId === profile.id)
+          (m.senderId === profile.id &&
+            m.receiverId === selectedThreadSenderId) ||
+          (m.senderId === selectedThreadSenderId &&
+            m.receiverId === profile.id),
       )
     : [];
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 space-y-6" data-ocid="donor.dashboard_page">
+    <div
+      className="mx-auto max-w-6xl px-4 py-8 space-y-6"
+      data-ocid="donor.dashboard_page"
+    >
       <div className="mb-6 pb-4 border-b border-border">
         <h1 className="heading-xl mb-1">{t("donorDashboard")}</h1>
         <p className="body-sm text-muted-foreground">
-          Manage your donor profile, check status metrics, and read customer messages.
+          Manage your donor profile, check status metrics, and read customer
+          messages.
         </p>
       </div>
 
@@ -452,7 +530,12 @@ const editMessage = useEditMessage();
                 <div className="flex gap-2 justify-center items-center">
                   <BloodTypeBadge bloodType={profile.bloodType} size="md" />
                   <span className="text-[10px] font-bold px-2 py-0.5 bg-primary/10 text-primary rounded-full uppercase">
-                    Level: {profile.donationCount >= 5 ? t("levelHero") : profile.donationCount >= 3 ? t("levelChampion") : t("levelLifesaver")}
+                    <User className="h-3 w-3 inline mr-1" />
+                    {profile.donationCount >= 5
+                      ? t("levelHero")
+                      : profile.donationCount >= 3
+                        ? t("levelChampion")
+                        : t("levelLifesaver")}
                   </span>
                 </div>
               </div>
@@ -461,11 +544,23 @@ const editMessage = useEditMessage();
             <Separator className="my-5" />
 
             <div className="divide-y divide-border/60 text-sm">
-              <InfoRow icon={<MapPin className="h-4 w-4" />} label="Address" value={`${[profile.area, profile.subDistrict, profile.district, profile.division].filter(Boolean).join(", ")} - ${profile.address}`} />
-              <InfoRow icon={<Phone className="h-4 w-4" />} label="Phone" value={profile.phone} />
+              <InfoRow
+                icon={<MapPin className="h-4 w-4" />}
+                label="Address"
+                value={`${[profile.area, profile.subDistrict, profile.district, profile.division].filter(Boolean).join(", ")} - ${profile.address}`}
+              />
+              <InfoRow
+                icon={<Phone className="h-4 w-4" />}
+                label="Phone"
+                value={profile.phone}
+              />
               <div className="flex justify-between py-3">
-                <span className="font-semibold text-muted-foreground">Total Donations:</span>
-                <span className="font-bold text-primary font-mono">{profile.donationCount} Times</span>
+                <span className="font-semibold text-muted-foreground">
+                  Total Donations:
+                </span>
+                <span className="font-bold text-primary font-mono">
+                  {profile.donationCount} Times
+                </span>
               </div>
             </div>
           </section>
@@ -477,7 +572,11 @@ const editMessage = useEditMessage();
                 <User className="h-5 w-5 text-primary" /> Edit Info
               </h2>
               {!isEditing && (
-                <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditing(true)}
+                >
                   Edit
                 </Button>
               )}
@@ -499,7 +598,8 @@ const editMessage = useEditMessage();
               />
             ) : (
               <p className="text-xs text-muted-foreground">
-                Update details to keep your search coordinates and contact information fresh.
+                Update details to keep your search coordinates and contact
+                information fresh.
               </p>
             )}
           </section>
@@ -507,12 +607,13 @@ const editMessage = useEditMessage();
 
         {/* Right Side: Donation logging & Chat message box */}
         <div className="md:col-span-2 space-y-6">
-          
           {/* Donation section */}
           <section className="rounded-xl border border-border bg-card p-6 shadow-sm">
             <div className="mb-4 flex items-center gap-2">
               <Heart className="h-5 w-5 text-primary" />
-              <h2 className="heading-md">Log a Donation & Availability Check</h2>
+              <h2 className="heading-md">
+                Log a Donation & Availability Check
+              </h2>
             </div>
 
             {profile.isAvailable ? (
@@ -520,7 +621,9 @@ const editMessage = useEditMessage();
                 <div className="flex items-start gap-3 rounded-lg border border-accent/30 bg-accent/10 p-4">
                   <CheckCircle2 className="mt-0.5 h-5 w-5 text-accent flex-shrink-0" />
                   <div>
-                    <p className="font-medium text-foreground">You are available to donate</p>
+                    <p className="font-medium text-foreground">
+                      You are available to donate
+                    </p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
                       Your blood type {profile.bloodType} is visible to seekers.
                     </p>
@@ -528,7 +631,10 @@ const editMessage = useEditMessage();
                 </div>
 
                 <div className="bg-muted/40 p-4 rounded-lg space-y-3">
-                  <Label htmlFor="donation-date-select" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <Label
+                    htmlFor="donation-date-select"
+                    className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                  >
                     When did you donate?
                   </Label>
                   <select
@@ -538,23 +644,43 @@ const editMessage = useEditMessage();
                     onChange={(e) => setDonationDateOption(e.target.value)}
                   >
                     <option value="today">Today (Marks as Unavailable)</option>
-                    <option value="1month">1 Month Ago (Marks as Unavailable)</option>
-                    <option value="3months">3 Months Ago (Marks as Unavailable)</option>
-                    <option value="4months">4 Months Ago (Stays Available - Eligibility Met)</option>
+                    <option value="1month">
+                      1 Month Ago (Marks as Unavailable)
+                    </option>
+                    <option value="3months">
+                      3 Months Ago (Marks as Unavailable)
+                    </option>
+                    <option value="4months">
+                      4 Months Ago (Stays Available - Eligibility Met)
+                    </option>
                   </select>
 
                   {confirmDonate ? (
                     <div className="flex flex-wrap items-center gap-3 pt-2">
-                      <span className="text-xs font-medium">Confirm logging donation?</span>
-                      <Button size="sm" onClick={handleLogDonation} disabled={donating}>
+                      <span className="text-xs font-medium">
+                        Confirm logging donation?
+                      </span>
+                      <Button
+                        size="sm"
+                        onClick={handleLogDonation}
+                        disabled={donating}
+                      >
                         Confirm
                       </Button>
-                      <Button size="sm" variant="ghost" onClick={() => setConfirmDonate(false)}>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setConfirmDonate(false)}
+                      >
                         Cancel
                       </Button>
                     </div>
                   ) : (
-                    <Button onClick={handleLogDonation} disabled={donating} className="gap-2 mt-2 w-full sm:w-auto">
+                    <Button
+                      onClick={handleLogDonation}
+                      disabled={donating}
+                      className="gap-2 mt-2 w-full sm:w-auto"
+                    >
                       <Heart className="h-4 w-4" /> Log Donation
                     </Button>
                   )}
@@ -567,13 +693,18 @@ const editMessage = useEditMessage();
                   <div>
                     <p className="font-medium">Currently unavailable</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      You recently logged a donation. Your profile will automatically become available again after the 4-month recovery period (120 days).
+                      You recently logged a donation. Your profile will
+                      automatically become available again after the 4-month
+                      recovery period (120 days).
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Clock className="h-4 w-4 text-primary" />
-                  <span>Recovery time check updates automatically based on your last logged date.</span>
+                  <span>
+                    Recovery time check updates automatically based on your last
+                    logged date.
+                  </span>
                 </div>
               </div>
             )}
@@ -594,47 +725,57 @@ const editMessage = useEditMessage();
               <div className="grid gap-4 sm:grid-cols-3">
                 {/* Thread partner list */}
                 <div className="space-y-1 sm:col-span-1 border-r border-border pr-3 h-64 overflow-y-auto">
-                  {chatThreads.map(([partnerId, data]: any) => (
-                    <div key={partnerId} className={`flex items-center justify-between w-full p-2 rounded text-xs font-semibold truncate ${selectedThreadSenderId === partnerId ? 'bg-primary/10 text-primary' : 'hover:bg-muted text-foreground'}`}>
-                      <button
-                        onClick={() => setSelectedThreadSenderId(partnerId)}
-                        className="flex-1 flex items-center text-left"
+                  {chatThreads.map(([partnerId, data]: any) => {
+                    const user = users?.find((u) => u.id === partnerId);
+                    const role = user?.role || "viewer";
+                    return (
+                      <div
+                        key={partnerId}
+                        className={`flex items-center justify-between w-full p-2 rounded text-xs font-semibold truncate ${selectedThreadSenderId === partnerId ? "bg-primary/10 text-primary" : "hover:bg-muted text-foreground"}`}
                       >
-                        {/* Role Icon */}
-                        {(() => {
-                          const user = users?.find((u) => u.id === partnerId);
-                          const role = user?.role || "viewer";
-                          switch (role) {
-                            case "admin":
-                              return <Shield className="h-4 w-4 mr-1" />;
-                            case "donor":
-                              return <Droplets className="h-4 w-4 mr-1" />;
-                            case "shopkeeper":
-                              return <Store className="h-4 w-4 mr-1" />;
-                            default:
-                              return <User className="h-4 w-4 mr-1" />;
-                          }
-                        })()}
-                        {data.partnerName} <span className="block text-[9px] font-normal text-muted-foreground">{data.messages.length} Messages</span>
-                      </button>
-                      {/* Delete inbox button */}
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive"><XCircle className="h-3 w-3"/></Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>This will permanently delete this conversation.</AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => deleteInbox.mutate(partnerId)}>Delete</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  ))}
+                        <button
+                          onClick={() => setSelectedThreadSenderId(partnerId)}
+                          className="flex-1 flex items-center text-left"
+                        >
+                          <RoleIcon
+                            role={role as any}
+                            className="h-4 w-4 mr-1"
+                          />
+                          {data.partnerName}{" "}
+                          <span className="block text-[9px] font-normal text-muted-foreground">
+                            {data.messages.length} Messages
+                          </span>
+                        </button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-destructive"
+                            >
+                              <XCircle className="h-3 w-3" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently delete this conversation.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => deleteInbox.mutate(partnerId)}
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {/* Selected Thread view */}
@@ -645,35 +786,71 @@ const editMessage = useEditMessage();
                         {selectedThreadMessages.map((msg) => {
                           const isMe = msg.senderId === profile.id;
                           return (
-                            <div key={msg.id} className={`max-w-[85%] ${isMe ? "ml-auto text-right" : "mr-auto text-left"}`}>
-                              <div className={`p-2 rounded text-xs inline-block font-medium ${
-                                isMe ? "bg-primary text-primary-foreground" : "bg-card text-foreground border border-border"
-                              }`}>
+                            <div
+                              key={msg.id}
+                              className={`max-w-[85%] ${isMe ? "ml-auto text-right" : "mr-auto text-left"}`}
+                            >
+                              <div
+                                className={`p-2 rounded text-xs inline-block font-medium ${
+                                  isMe
+                                    ? "bg-primary text-primary-foreground"
+                                    : "bg-card text-foreground border border-border"
+                                }`}
+                              >
                                 {isMe && editingMessageId === msg.id ? (
                                   <div className="flex items-center gap-2">
                                     <input
                                       type="text"
                                       value={editingText}
-                                      onChange={(e) => setEditingText(e.target.value)}
+                                      onChange={(e) =>
+                                        setEditingText(e.target.value)
+                                      }
                                       className="border rounded p-1 text-xs"
                                     />
-                                    <Button size="sm" onClick={async () => {
-                                      await editMessage.mutateAsync({ messageId: msg.id, newText: editingText });
-                                      setEditingMessageId(null);
-                                    }}>Save</Button>
-                                    <Button size="sm" variant="outline" onClick={() => setEditingMessageId(null)}>Cancel</Button>
+                                    <Button
+                                      size="sm"
+                                      onClick={async () => {
+                                        await editMessage.mutateAsync({
+                                          messageId: msg.id,
+                                          newText: editingText,
+                                        });
+                                        setEditingMessageId(null);
+                                      }}
+                                    >
+                                      Save
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => setEditingMessageId(null)}
+                                    >
+                                      Cancel
+                                    </Button>
                                   </div>
                                 ) : (
                                   <>{msg.text}</>
                                 )}
+                                {isMe && (
+                                  <button
+                                    onClick={() => {
+                                      setEditingMessageId(msg.id);
+                                      setEditingText(msg.text);
+                                    }}
+                                    className="text-[10px] text-muted-foreground ml-1"
+                                  >
+                                    Edit
+                                  </button>
+                                )}
                               </div>
-                              {isMe && <button onClick={() => { setEditingMessageId(msg.id); setEditingText(msg.text); }} className="text-[10px] text-muted-foreground ml-1">Edit</button>}
                             </div>
                           );
                         })}
                       </div>
 
-                      <form onSubmit={handleSendReply} className="flex gap-2 pt-2">
+                      <form
+                        onSubmit={handleSendReply}
+                        className="flex gap-2 pt-2"
+                      >
                         <Input
                           placeholder="Type reply..."
                           value={replyText}
@@ -694,7 +871,6 @@ const editMessage = useEditMessage();
               </div>
             )}
           </section>
-
         </div>
       </div>
     </div>

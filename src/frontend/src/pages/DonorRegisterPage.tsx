@@ -22,9 +22,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { BloodTypeBadge } from "../components/BloodTypeBadge";
 import { LoadingSpinner } from "../components/LoadingSpinner";
-import {
-  useRegisterDonor,
-} from "../hooks/useBackend";
+import { useRegisterDonor } from "../hooks/useBackend";
 import { BLOOD_TYPES } from "../types";
 
 // ─── Location Section ─────────────────────────────────────────────────────────
@@ -198,8 +196,7 @@ export function DonorRegisterPage() {
     }
 
     try {
-      const result = 
-      await registerDonor.mutateAsync(form);
+      const result = await registerDonor.mutateAsync(form);
 
       if (result.__kind__ === "ok") {
         toast.success(
