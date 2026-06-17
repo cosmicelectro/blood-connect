@@ -24,7 +24,11 @@ import {
   useLocalDb,
 } from "../hooks/useLocalDb";
 
+import { useAuth } from "../hooks/useAuth";
+
 export function AdminDashboard() {
+  const { language } = useAuth();
+  const isBn = language === "bn";
   const {
     donors,
     shops,
@@ -132,11 +136,12 @@ export function AdminDashboard() {
     >
       <div className="border-b border-border pb-4">
         <h1 className="text-3xl font-display font-bold text-foreground tracking-tight">
-          Admin Control Center
+          {isBn ? "অ্যাডমিন কন্ট্রোল সেন্টার" : "Admin Control Center"}
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Monitor and manage users, donors, medical shops, and clinical
-          inventory.
+          {isBn
+            ? "রক্তদাতা, মেডিকেল শপ এবং ব্যবহারকারী মনিটর ও পরিচালনা করুন।"
+            : "Monitor and manage users, donors, medical shops, and clinical inventory."}
         </p>
       </div>
 
@@ -148,7 +153,7 @@ export function AdminDashboard() {
           </div>
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Total Donors
+              {isBn ? "মোট রক্তদাতা" : "Total Donors"}
             </p>
             <p className="text-2xl font-bold font-display">{donors.length}</p>
           </div>
@@ -160,7 +165,7 @@ export function AdminDashboard() {
           </div>
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Active & Ready
+              {isBn ? "সক্রিয় ও প্রস্তুত" : "Active & Ready"}
             </p>
             <p className="text-2xl font-bold font-display">
               {availableDonorsCount}
@@ -174,7 +179,7 @@ export function AdminDashboard() {
           </div>
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Medical Shops
+              {isBn ? "মেডিকেল শপ" : "Medical Shops"}
             </p>
             <p className="text-2xl font-bold font-display">{shops.length}</p>
           </div>
@@ -186,7 +191,7 @@ export function AdminDashboard() {
           </div>
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Active Reports
+              {isBn ? "সক্রিয় রিপোর্ট" : "Active Reports"}
             </p>
             <p className="text-2xl font-bold font-display">{reports.length}</p>
           </div>
@@ -202,10 +207,10 @@ export function AdminDashboard() {
             <div className="flex justify-between items-center mb-4 gap-4 flex-wrap">
               <h2 className="text-xl font-bold font-display flex items-center gap-2">
                 <HeartPulse className="h-5 w-5 text-primary" />
-                Manage Donors
+                {isBn ? "রক্তদাতা পরিচালনা" : "Manage Donors"}
               </h2>
               <Input
-                placeholder="Search by name, type, location..."
+                placeholder={isBn ? "নাম, রক্তের গ্রুপ, ঠিকানা দিয়ে খুঁজুন..." : "Search by name, type, location..."}
                 className="max-w-xs"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -216,11 +221,11 @@ export function AdminDashboard() {
               <table className="w-full text-left text-sm border-collapse">
                 <thead>
                   <tr className="border-b border-border text-muted-foreground font-semibold">
-                    <th className="py-2">Name</th>
-                    <th className="py-2 text-center">Type</th>
-                    <th className="py-2">Contact</th>
-                    <th className="py-2">Status</th>
-                    <th className="py-2 text-right">Actions</th>
+                    <th className="py-2">{isBn ? "নাম" : "Name"}</th>
+                    <th className="py-2 text-center">{isBn ? "রক্তের গ্রুপ" : "Type"}</th>
+                    <th className="py-2">{isBn ? "যোগাযোগ" : "Contact"}</th>
+                    <th className="py-2">{isBn ? "অবস্থা" : "Status"}</th>
+                    <th className="py-2 text-right">{isBn ? "অ্যাকশন" : "Actions"}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -256,7 +261,13 @@ export function AdminDashboard() {
                               : "bg-red-500/10 text-red-500"
                           }`}
                         >
-                          {donor.isAvailable ? "Available" : "Unavailable"}
+                          {donor.isAvailable
+                            ? isBn
+                              ? "উপস্থিত"
+                              : "Available"
+                            : isBn
+                              ? "অনুপস্থিত"
+                              : "Unavailable"}
                         </button>
                       </td>
                       <td className="py-3 text-right space-x-2">
@@ -275,7 +286,7 @@ export function AdminDashboard() {
                           <Trash2 className="h-4 w-4 inline" />
                         </button>
                       </td>
-                    </tr>
+                      </tr>
                   ))}
                   {filteredDonors.length === 0 && (
                     <tr>
@@ -283,7 +294,7 @@ export function AdminDashboard() {
                         colSpan={5}
                         className="text-center py-6 text-muted-foreground"
                       >
-                        No donors found matching criteria.
+                        {isBn ? "কোনো রক্তদাতা পাওয়া যায়নি।" : "No donors found matching criteria."}
                       </td>
                     </tr>
                   )}
@@ -296,7 +307,7 @@ export function AdminDashboard() {
           <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
             <h2 className="text-xl font-bold font-display flex items-center gap-2 mb-4">
               <Store className="h-5 w-5 text-blue-600" />
-              Manage Medical Shops
+              {isBn ? "মেডিকেল শপ পরিচালনা" : "Manage Medical Shops"}
             </h2>
             <div className="grid gap-4 sm:grid-cols-2">
               {shops.map((shop) => (
@@ -314,7 +325,7 @@ export function AdminDashboard() {
                     </p>
                     {shop.products.length > 0 && (
                       <div className="mt-2 text-xs">
-                        <span className="font-semibold">Products: </span>
+                        <span className="font-semibold">{isBn ? "পণ্যসমূহ: " : "Products: "}</span>
                         {shop.products
                           .slice(0, 3)
                           .map((p) => p.name)
@@ -329,14 +340,14 @@ export function AdminDashboard() {
                       size="sm"
                       onClick={() => setEditingShop(shop)}
                     >
-                      <Edit className="h-3.5 w-3.5 mr-1" /> Edit
+                      <Edit className="h-3.5 w-3.5 mr-1" /> {isBn ? "সম্পাদনা" : "Edit"}
                     </Button>
                     <Button
                       variant="destructive"
                       size="sm"
                       onClick={() => handleDeleteShop(shop.id)}
                     >
-                      <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
+                      <Trash2 className="h-3.5 w-3.5 mr-1" /> {isBn ? "মুছুন" : "Delete"}
                     </Button>
                   </div>
                 </div>
@@ -351,14 +362,14 @@ export function AdminDashboard() {
           <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
             <h2 className="text-lg font-bold font-display mb-4 flex items-center gap-2">
               <Plus className="h-5 w-5 text-emerald-600" />
-              Add Medical Shop
+              {isBn ? "মেডিকেল শপ যুক্ত করুন" : "Add Medical Shop"}
             </h2>
             <form onSubmit={handleAddShopSubmit} className="space-y-3">
               <div className="space-y-1">
-                <Label htmlFor="s-name">Shop Name</Label>
+                <Label htmlFor="s-name">{isBn ? "দোকানের নাম" : "Shop Name"}</Label>
                 <Input
                   id="s-name"
-                  placeholder="Medical Supply Store Name"
+                  placeholder={isBn ? "মেডিকেল সাপ্লাই স্টোরের নাম" : "Medical Supply Store Name"}
                   required
                   value={newShopForm.name}
                   onChange={(e) =>
@@ -367,10 +378,10 @@ export function AdminDashboard() {
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="s-desc">Description</Label>
+                <Label htmlFor="s-desc">{isBn ? "বিবরণ" : "Description"}</Label>
                 <Textarea
                   id="s-desc"
-                  placeholder="Items sold, special offers, details..."
+                  placeholder={isBn ? "বিক্রিত পণ্য, বিশেষ অফার, বিস্তারিত..." : "Items sold, special offers, details..."}
                   required
                   rows={2}
                   value={newShopForm.description}
@@ -383,10 +394,10 @@ export function AdminDashboard() {
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="s-addr">Address</Label>
+                <Label htmlFor="s-addr">{isBn ? "ঠিকানা" : "Address"}</Label>
                 <Input
                   id="s-addr"
-                  placeholder="Dhanmondi, Dhaka"
+                  placeholder={isBn ? "ধানমন্ডি, ঢাকা" : "Dhanmondi, Dhaka"}
                   required
                   value={newShopForm.address}
                   onChange={(e) =>
@@ -396,10 +407,10 @@ export function AdminDashboard() {
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <Label htmlFor="s-phone">Phone</Label>
+                  <Label htmlFor="s-phone">{isBn ? "ফোন" : "Phone"}</Label>
                   <Input
                     id="s-phone"
-                    placeholder="Phone number"
+                    placeholder={isBn ? "ফোন নম্বর" : "Phone number"}
                     required
                     value={newShopForm.phone}
                     onChange={(e) =>
@@ -408,7 +419,7 @@ export function AdminDashboard() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="s-web">Website (opt)</Label>
+                  <Label htmlFor="s-web">{isBn ? "ওয়েবসাইট (ঐচ্ছিক)" : "Website (opt)"}</Label>
                   <Input
                     id="s-web"
                     placeholder="URL"
@@ -423,7 +434,7 @@ export function AdminDashboard() {
                 </div>
               </div>
               <Button type="submit" className="w-full mt-2">
-                Create Shop
+                {isBn ? "দোকান তৈরি করুন" : "Create Shop"}
               </Button>
             </form>
           </div>
@@ -432,12 +443,12 @@ export function AdminDashboard() {
           <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
             <h2 className="text-lg font-bold font-display mb-4 flex items-center gap-2">
               <MessageSquareWarning className="h-5 w-5 text-orange-600" />
-              User Reports
+              {isBn ? "ব্যবহারকারী রিপোর্ট" : "User Reports"}
             </h2>
             <div className="space-y-3">
-              {reports.length === 0 ? (
+               {reports.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  No pending reports.
+                  {isBn ? "কোনো পেন্ডিং রিপোর্ট নেই।" : "No pending reports."}
                 </p>
               ) : (
                 reports.map((r) => (
@@ -464,7 +475,7 @@ export function AdminDashboard() {
                         className="h-7 text-xs"
                         onClick={() => deleteReport.mutate(r.id)}
                       >
-                        Resolve / Dismiss
+                        {isBn ? "সমাধান / বাতিল করুন" : "Resolve / Dismiss"}
                       </Button>
                     </div>
                   </div>

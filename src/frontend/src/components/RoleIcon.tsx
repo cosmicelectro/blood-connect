@@ -20,6 +20,7 @@ export function RoleIcon({
     case "admin":
       return <Shield className={className} size={size} />; // admin with shield
     case "user":
+    case "viewer":
     default:
       return <User className={className} size={size} />; // generic user silhouette
   }

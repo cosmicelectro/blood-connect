@@ -17,6 +17,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../hooks/useAuth";
 import { ReportDialog } from "./ReportDialog";
+import { RoleIcon } from "./RoleIcon";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -113,15 +114,7 @@ export function Layout({ children }: LayoutProps) {
               />
             </div>
             <span className="font-display text-xl font-bold tracking-tight">
-              {language === "en" ? (
-                <>
-                  Blood<span className="text-primary">Connect</span>
-                </>
-              ) : (
-                <>
-                  ব্লাড<span className="text-primary">কানেক্ট</span>
-                </>
-              )}
+              Blood<span className="text-primary">Connect</span>
             </span>
           </Link>
 
@@ -188,7 +181,7 @@ export function Layout({ children }: LayoutProps) {
                 <div
                   className={`flex items-center gap-1.5 rounded-full px-2 lg:px-3 py-1 text-xs font-semibold uppercase tracking-wider ${getRoleBadgeColor()}`}
                 >
-                  <RefreshCw className="h-3 w-3 hidden lg:block" />
+                  <RoleIcon role={role as any} className="h-3.5 w-3.5 hidden lg:block" />
                   {role}
                 </div>
                 <div className="text-sm font-semibold max-w-[120px] truncate hidden xl:block">
@@ -335,15 +328,7 @@ export function Layout({ children }: LayoutProps) {
                 <Droplets className="h-4 w-4 text-primary-foreground" />
               </div>
               <span className="font-display font-semibold">
-                {language === "en" ? (
-                  <>
-                    Blood<span className="text-primary">Connect</span>
-                  </>
-                ) : (
-                  <>
-                    ব্লাড<span className="text-primary">কানেক্ট</span>
-                  </>
-                )}
+                Blood<span className="text-primary">Connect</span>
               </span>
             </div>
             <p className="text-xs text-muted-foreground">

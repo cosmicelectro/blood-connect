@@ -41,7 +41,7 @@ function ShopCard({
   isLoggedIn: boolean;
   currentUserId?: string;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   return (
     <article
@@ -127,7 +127,7 @@ function ShopCard({
             className="w-full gap-1.5 text-xs font-semibold"
           >
             <MessageSquare className="h-3.5 w-3.5" />
-            Contact Shop
+            {i18n.language === "bn" ? "যোগাযোগ করুন" : "Contact Shop"}
           </Button>
         )}
       </div>
@@ -139,6 +139,8 @@ function AddShopDialog({
   open,
   onClose,
 }: { open: boolean; onClose: () => void }) {
+  const { i18n } = useTranslation();
+  const isBn = i18n.language === "bn";
   const [form, setForm] = useState({
     name: "",
     address: "",
@@ -182,55 +184,55 @@ function AddShopDialog({
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent data-ocid="add_shop.dialog">
         <DialogHeader>
-          <DialogTitle>Add Medical Shop</DialogTitle>
+          <DialogTitle>{isBn ? "মেডিকেল শপ যুক্ত করুন" : "Add Medical Shop"}</DialogTitle>
           <DialogDescription>
-            List a medical equipment or supplies shop.
+            {isBn ? "একটি মেডিকেল সরঞ্জাম বা সরবরাহকারী দোকান তালিকাভুক্ত করুন।" : "List a medical equipment or supplies shop."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="shop-name">Shop Name *</Label>
+            <Label htmlFor="shop-name">{isBn ? "দোকানের নাম *" : "Shop Name *"}</Label>
             <Input
               id="shop-name"
               required
-              placeholder="MediCare Supplies"
+              placeholder={isBn ? "মেডিকেয়ার সাপ্লাইস" : "MediCare Supplies"}
               {...field("name")}
               data-ocid="add_shop.name_input"
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="shop-description">Description *</Label>
+            <Label htmlFor="shop-description">{isBn ? "বিবরণ *" : "Description *"}</Label>
             <Textarea
               id="shop-description"
               required
-              placeholder="Medical equipment, blood bags…"
+              placeholder={isBn ? "চিকিৎসা সরঞ্জাম, রক্তের ব্যাগ..." : "Medical equipment, blood bags…"}
               {...field("description")}
               data-ocid="add_shop.description_input"
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="shop-address">Address *</Label>
+            <Label htmlFor="shop-address">{isBn ? "ঠিকানা *" : "Address *"}</Label>
             <Input
               id="shop-address"
               required
-              placeholder="123 Health Street, City"
+              placeholder={isBn ? "১২৩ হেলথ স্ট্রিট, শহর" : "123 Health Street, City"}
               {...field("address")}
               data-ocid="add_shop.address_input"
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="shop-phone">Phone *</Label>
+            <Label htmlFor="shop-phone">{isBn ? "ফোন নম্বর *" : "Phone *"}</Label>
             <Input
               id="shop-phone"
               required
               type="tel"
-              placeholder="+1 (555) 000-0000"
+              placeholder="+৮৮০-XXXX-XXXXXX"
               {...field("phone")}
               data-ocid="add_shop.phone_input"
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="shop-website">Website (optional)</Label>
+            <Label htmlFor="shop-website">{isBn ? "ওয়েবসাইট (ঐচ্ছিক)" : "Website (optional)"}</Label>
             <Input
               id="shop-website"
               type="url"
@@ -246,14 +248,14 @@ function AddShopDialog({
               onClick={onClose}
               data-ocid="add_shop.cancel_button"
             >
-              Cancel
+              {isBn ? "বাতিল করুন" : "Cancel"}
             </Button>
             <Button
               type="submit"
               disabled={addShop.isPending}
               data-ocid="add_shop.submit_button"
             >
-              {addShop.isPending ? "Adding…" : "Add Shop"}
+              {addShop.isPending ? (isBn ? "যুক্ত করা হচ্ছে..." : "Adding…") : (isBn ? "দোকান যুক্ত করুন" : "Add Shop")}
             </Button>
           </div>
         </form>

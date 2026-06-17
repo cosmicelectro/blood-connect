@@ -251,28 +251,28 @@ export function SearchPage() {
                 <div className="space-y-2">
                   <input
                     type="text"
-                    placeholder="Division"
+                    placeholder={language === "bn" ? "বিভাগ" : "Division"}
                     className="w-full border border-border bg-card p-2 rounded-md text-sm outline-none"
                     value={division}
                     onChange={(e) => setDivision(e.target.value)}
                   />
                   <input
                     type="text"
-                    placeholder="District"
+                    placeholder={language === "bn" ? "জেলা" : "District"}
                     className="w-full border border-border bg-card p-2 rounded-md text-sm outline-none"
                     value={district}
                     onChange={(e) => setDistrict(e.target.value)}
                   />
                   <input
                     type="text"
-                    placeholder="Sub-district / Upazila"
+                    placeholder={language === "bn" ? "উপজেলা" : "Sub-district / Upazila"}
                     className="w-full border border-border bg-card p-2 rounded-md text-sm outline-none"
                     value={subDistrict}
                     onChange={(e) => setSubDistrict(e.target.value)}
                   />
                   <input
                     type="text"
-                    placeholder="Area / Ward"
+                    placeholder={language === "bn" ? "এলাকা / ওয়ার্ড" : "Area / Ward"}
                     className="w-full border border-border bg-card p-2 rounded-md text-sm outline-none"
                     value={area}
                     onChange={(e) => setArea(e.target.value)}
