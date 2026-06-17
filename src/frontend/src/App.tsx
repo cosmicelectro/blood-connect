@@ -13,7 +13,9 @@ import { ShopsPage } from "./pages/ShopsPage";
 import { AuthPage } from "./pages/AuthPage";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { ShopkeeperDashboard } from "./pages/ShopkeeperDashboard";
-
+import { useAuth } from "./hooks/useAuth";
+import { Navigate } from "@tanstack/react-router";
+import { ProfilePage } from "./pages/ProfilePage";
 const rootRoute = createRootRoute({
   component: () => (
     <Layout>
@@ -34,10 +36,47 @@ const shopsRoute = createRoute({
   component: ShopsPage,
 });
 
+const adminRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/admin",
+  component: () => {
+    const { currentUser } = useAuth();
+    if (!currentUser) return <Navigate to="/auth" />;
+    if (currentUser.role !== "admin") return <Navigate to="/" />;
+    return <AdminDashboard />;
+  },
+});
+
 const donorRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/donor",
-  component: DonorDashboard,
+  component: () => {
+    const { currentUser } = useAuth();
+    if (!currentUser) return <Navigate to="/auth" />;
+    if (currentUser.role !== "donor") return <Navigate to="/" />;
+    return <DonorDashboard />;
+  },
+});
+
+const shopkeeperRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/shopkeeper",
+  component: () => {
+    const { currentUser } = useAuth();
+    if (!currentUser) return <Navigate to="/auth" />;
+    if (currentUser.role !== "shopkeeper") return <Navigate to="/" />;
+    return <ShopkeeperDashboard />;
+  },
+});
+
+const profileRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/profile",
+  component: () => {
+    const { currentUser } = useAuth();
+    if (!currentUser) return <Navigate to="/auth" />;
+    return <ProfilePage />;
+  },
 });
 
 const donorRegisterRoute = createRoute({
@@ -52,17 +91,7 @@ const authRoute = createRoute({
   component: AuthPage,
 });
 
-const adminRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/admin",
-  component: AdminDashboard,
-});
 
-const shopkeeperRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/shopkeeper",
-  component: ShopkeeperDashboard,
-});
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -72,6 +101,7 @@ const routeTree = rootRoute.addChildren([
   authRoute,
   adminRoute,
   shopkeeperRoute,
+  profileRoute,
 ]);
 
 const router = createRouter({ routeTree });

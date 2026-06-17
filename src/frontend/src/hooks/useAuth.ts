@@ -41,7 +41,14 @@ export function useAuth() {
     return newUser;
   };
 
-  const logout = () => {
+  const updatePassword = (oldPwd: string, newPwd: string) => {
+    if (!currentUser) throw new Error("Not logged in");
+    if (currentUser.password !== oldPwd) throw new Error("Old password incorrect");
+    const db = useLocalDb.getState();
+    db.updatePassword(currentUser.id, newPwd);
+    // refresh currentUser
+    setCurrentUser({ ...currentUser, password: newPwd });
+  };
     setCurrentUser(null);
     // Hard refresh to home page to clear all UI dashboards
     window.location.href = "/";
@@ -70,6 +77,7 @@ export function useAuth() {
       const db = useLocalDb.getState();
       db.updateUserRole(currentUser.id, newRole);
     },
+    updatePassword,
     loginStatus: currentUser ? "success" : "idle",
   };
 }

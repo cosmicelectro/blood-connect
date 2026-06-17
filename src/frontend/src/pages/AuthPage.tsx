@@ -3,7 +3,7 @@ import { useAuth } from "../hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Droplets, ShieldAlert, Heart, Store, User, ArrowRight, Lock, Mail, UserCheck, Loader2 } from "lucide-react";
+import { Droplets, ShieldAlert, Heart, Store, User, ArrowRight, Lock, Mail, UserCheck, Loader2, Eye, EyeOff } from "lucide-react";
 import { FaGoogle, FaFacebookF } from "react-icons/fa";
 import { useTranslate } from "../lib/translations";
 import { toast } from "sonner";
@@ -12,13 +12,13 @@ export function AuthPage() {
   const { loginWithOAuth, loginWithCredentials, registerNewProfile, language } = useAuth();
   const t = useTranslate(language);
 
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
   const [role, setRole] = useState<"donor" | "shopkeeper" | "viewer">("viewer");
-  
+
   // OAuth Popup Simulation State
   const [oauthPopup, setOauthPopup] = useState<{ isOpen: boolean; provider: "google" | "facebook" | null }>({
     isOpen: false,
@@ -77,7 +77,7 @@ export function AuthPage() {
   return (
     <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-muted/40 p-4" data-ocid="auth.page">
       <div className="w-full max-w-md overflow-hidden rounded-2xl border border-border bg-card shadow-xl animate-in fade-in zoom-in-95 duration-300">
-        
+
         {/* Top Accent Bar */}
         <div className="h-1.5 w-full bg-primary" />
 
@@ -99,17 +99,15 @@ export function AuthPage() {
           <div className="flex bg-muted p-1 rounded-lg mb-6">
             <button
               onClick={() => setIsSignUp(false)}
-              className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
-                !isSignUp ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
-              }`}
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${!isSignUp ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
             >
               {t("login")}
             </button>
             <button
               onClick={() => setIsSignUp(true)}
-              className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
-                isSignUp ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
-              }`}
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${isSignUp ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
             >
               {t("register")}
             </button>
@@ -134,9 +132,8 @@ export function AuthPage() {
                       key={item.type}
                       type="button"
                       onClick={() => setRole(item.type as any)}
-                      className={`flex flex-col items-center justify-center rounded-xl border p-2 text-center transition-all gap-1.5 ${
-                        isSelected ? item.activeBg + " border-2 shadow-sm" : "border-border bg-card text-muted-foreground hover:bg-muted"
-                      }`}
+                      className={`flex flex-col items-center justify-center rounded-xl border p-2 text-center transition-all gap-1.5 ${isSelected ? item.activeBg + " border-2 shadow-sm" : "border-border bg-card text-muted-foreground hover:bg-muted"
+                        }`}
                     >
                       <IconComponent className="h-4 w-4" />
                       <span className="text-[10px] font-bold truncate max-w-full">{item.label}</span>
@@ -188,13 +185,16 @@ export function AuthPage() {
                 <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   className="pl-9"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-2.5 text-muted-foreground">
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
             </div>
 
@@ -205,13 +205,16 @@ export function AuthPage() {
                   <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="confirm-password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     className="pl-9"
                     required
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                   />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-2.5 text-muted-foreground">
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
               </div>
             )}
@@ -263,6 +266,7 @@ export function AuthPage() {
               Sign in with {oauthPopup.provider === "google" ? "Google" : "Facebook"}
             </h3>
 
+            {/* OAuth Email Input */}
             {oauthLoading ? (
               <div className="py-12 flex flex-col items-center justify-center gap-3">
                 <Loader2 className="h-8 w-8 text-primary animate-spin" />
@@ -270,29 +274,32 @@ export function AuthPage() {
               </div>
             ) : (
               <div className="py-4 space-y-3">
-                <p className="text-xs text-muted-foreground mb-1">Select an account to log in to BloodConnect:</p>
-                {[
-                  { name: "Rahul Ahmed", email: "rahul@gmail.com" },
-                  { name: "Fatima Khanam", email: "fatima@gmail.com" },
-                  { name: "Sajid Hasan", email: "sajid@gmail.com" },
-                  { name: "Create New Profile", email: "new-user@gmail.com" },
-                ].map((account) => (
-                  <button
-                    key={account.email}
-                    onClick={() => handleOAuthSelectAccount(account.email, account.name)}
-                    className="w-full text-left p-3 border border-border/80 rounded-lg hover:bg-muted text-xs transition-colors flex justify-between items-center"
-                  >
-                    <div>
-                      <div className="font-bold text-foreground">{account.name}</div>
-                      <div className="text-muted-foreground">{account.email}</div>
-                    </div>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                  </button>
-                ))}
-                
-                <Button variant="outline" className="w-full mt-2" onClick={() => setOauthPopup({ isOpen: false, provider: null })}>
-                  Cancel
-                </Button>
+                <p className="text-xs text-muted-foreground mb-1">Enter your {oauthPopup.provider} email to continue:</p>
+                <Input
+                  id="oauth-email"
+                  placeholder="you@example.com"
+                  className="pl-9"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+                <Button variant="default" className="w-full mt-2" onClick={() => {
+                  const userObj = loginWithOAuth(oauthPopup.provider!, role);
+                  // Overwrite email with entered one if different
+                  if (email && email !== userObj.email) {
+                    // Update user's email in DB (simple replace)
+                    const db = useLocalDb.getState();
+                    db.updateUserRole(userObj.id, userObj.role); // no role change
+                    // directly modify users array
+                    const users = db.users.map(u => u.id === userObj.id ? { ...u, email } : u);
+                    db.setCurrentUser({ ...userObj, email });
+                  }
+                  toast.success(`Successfully authenticated via ${oauthPopup.provider} as ${userObj.role}!`);
+                  setOauthPopup({ isOpen: false, provider: null });
+                  setTimeout(() => {
+                    window.location.href = userObj.role === "admin" ? "/admin" : userObj.role === "donor" ? "/donor" : userObj.role === "shopkeeper" ? "/shopkeeper" : "/";
+                  }, 800);
+                }}>{t("continue")}</Button>
+                <Button variant="outline" className="w-full mt-2" onClick={() => setOauthPopup({ isOpen: false, provider: null })}>Cancel</Button>
               </div>
             )}
           </div>

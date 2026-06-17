@@ -73,7 +73,7 @@ interface LocalDbState {
   // Auth actions
   setCurrentUser: (user: LocalUser | null) => void;
   registerUser: (email: string, name: string, role: LocalUser["role"], password?: string) => LocalUser;
-  updateUserRole: (userId: string, newRole: LocalUser["role"]) => void;
+  updateUserEmail: (userId: string, newEmail: string) => void,
   
   // Donor actions
   addDonor: (donor: Omit<LocalDonor, "isAvailable" | "donationCount">) => void;
@@ -204,14 +204,24 @@ export const useLocalDb = create<LocalDbState>()(
           document.documentElement.classList.remove("dark");
         }
       },
-      setCurrentUser: (user) => set({ currentUser: user }),
-      registerUser: (email, name, role, password) => {
-        const id = Math.random().toString(36).substring(2, 9);
-        const newUser: LocalUser = { id, email, name, role, password: password || "password123" };
-        set((state) => ({ users: [...state.users, newUser] }));
-        return newUser;
-      },
-      updateUserRole: (userId, newRole) => {
+      setCurrentUser: (user) =>
+        set({ currentUser: user }),
+      // Update password for a given user id
+      updatePassword: (userId: string, newPassword: string) =>
+        set((state) => ({
+          users: state.users.map((u) => (u.id === userId ? { ...u, password: newPassword } : u)),
+        })),
+      registerUser: (email, name, role, password) =>
+        {
+          const id = Math.random().toString(36).substring(2, 9);
+          const newUser: LocalUser = { id, email, name, role, password: password || "password123" };
+          set((state) => ({ users: [...state.users, newUser] }));
+          return newUser;
+        },
+      updateUserEmail: (userId, newEmail) =>
+        set((state) => ({
+          users: state.users.map((u) => (u.id === userId ? { ...u, email: newEmail } : u)),
+        })), {
         set((state) => {
           const updatedUsers = state.users.map((u) => (u.id === userId ? { ...u, role: newRole } : u));
           let updatedCurrentUser = state.currentUser;
@@ -230,9 +240,16 @@ export const useLocalDb = create<LocalDbState>()(
           donors: state.donors.map((d) => (d.id === id ? { ...d, ...updatedFields } : d)),
         })),
       deleteDonor: (id) =>
-        set((state) => ({
-          donors: state.donors.filter((d) => d.id !== id),
-        })),
+        set((state) => {
+          const currentUser = state.currentUser;
+          if (!currentUser || currentUser.role !== "admin") {
+            console.warn("Only admin can delete donors");
+            return state;
+          }
+          return {
+            donors: state.donors.filter((d) => d.id !== id),
+          };
+        }),
       logDonation: (id, date) => {
         const donationTime = date || Date.now();
         set((state) => ({
@@ -272,9 +289,17 @@ export const useLocalDb = create<LocalDbState>()(
           shops: state.shops.map((s) => (s.id === id ? { ...s, ...updatedFields } : s)),
         })),
       deleteShop: (id) =>
-        set((state) => ({
-          shops: state.shops.filter((s) => s.id !== id),
-        })),
+        set((state) => {
+          const currentUser = state.currentUser;
+          if (!currentUser || currentUser.role !== "admin") {
+            // Not authorized; optionally show a toast in UI layer
+            console.warn("Only admin can delete shops");
+            return state;
+          }
+          return {
+            shops: state.shops.filter((s) => s.id !== id),
+          };
+        }),
       addShopProduct: (shopId, product) =>
         set((state) => ({
           shops: state.shops.map((s) =>
