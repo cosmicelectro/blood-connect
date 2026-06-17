@@ -38,7 +38,6 @@ export function AuthPage() {
     loginWithOAuth,
     loginWithCredentials,
     registerNewProfile,
-    language,
     verifyUser,
   } = useAuth();
   const { t } = useTranslation();
@@ -59,7 +58,6 @@ export function AuthPage() {
     isOpen: false,
     provider: null,
   });
-  const [oauthLoading, setOauthLoading] = useState(false);
 
   const [division, setDivision] = useState("");
   const [district, setDistrict] = useState("");

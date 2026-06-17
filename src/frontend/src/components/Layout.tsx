@@ -42,7 +42,14 @@ export function Layout({ children }: LayoutProps) {
   const routerState = useRouterState();
   const navigate = useNavigate();
   const currentPath = routerState.location.pathname;
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+
+  // Sync i18n language
+  useEffect(() => {
+    if (i18n.language !== language) {
+      i18n.changeLanguage(language);
+    }
+  }, [language, i18n]);
 
   // Sync dark theme on load
   useEffect(() => {

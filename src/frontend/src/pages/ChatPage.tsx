@@ -1,11 +1,17 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MessageSquare, Send, User as UserIcon } from "lucide-react";
+import { MessageSquare, Send, Trash2, User as UserIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useAuth } from "../hooks/useAuth";
-import { useMessages, useSendMessage, useUsers } from "../hooks/useBackend";
+import {
+  useDeleteInbox,
+  useEditMessage,
+  useMessages,
+  useSendMessage,
+  useUsers,
+} from "../hooks/useBackend";
 
 export function ChatPage() {
   const { user, isLoggedIn } = useAuth();
@@ -13,6 +19,25 @@ export function ChatPage() {
   const { data: users = [] } = useUsers();
   const { data: messages = [] } = useMessages(user?.id || "");
   const sendMessage = useSendMessage();
+  const deleteInbox = useDeleteInbox();
+  const editMessage = useEditMessage();
+
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState("");
+
+  const startEdit = (messageId: string, currentText: string) => {
+    setEditingMessageId(messageId);
+    setEditingText(currentText);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingMessageId || !editingText.trim()) return;
+    await editMessage.mutateAsync({
+      messageId: editingMessageId,
+      newText: editingText.trim(),
+    });
+    setEditingMessageId(null);
+  };
 
   const [activeChatUserId, setActiveChatUserId] = useState<string | null>(null);
   const [text, setText] = useState("");
@@ -115,18 +140,38 @@ export function ChatPage() {
           {activeChatUser ? (
             <>
               {/* Chat Header */}
-              <div className="p-4 border-b border-border flex items-center gap-3 bg-muted/10">
-                <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-primary">
-                  <UserIcon className="h-5 w-5" />
+              <div className="p-4 border-b border-border flex items-center justify-between bg-muted/10">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+                    <UserIcon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold font-display">
+                      {activeChatUser.name}
+                    </h3>
+                    <p className="text-xs text-muted-foreground uppercase">
+                      {activeChatUser.role}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold font-display">
-                    {activeChatUser.name}
-                  </h3>
-                  <p className="text-xs text-muted-foreground uppercase">
-                    {activeChatUser.role}
-                  </p>
-                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-destructive hover:bg-destructive/10"
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        "Are you sure you want to delete this entire conversation?",
+                      )
+                    ) {
+                      deleteInbox.mutate(activeChatUserId!);
+                      setActiveChatUserId(null);
+                    }
+                  }}
+                  title="Delete Conversation"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
 
               {/* Messages Thread */}
@@ -141,25 +186,65 @@ export function ChatPage() {
                     return (
                       <div
                         key={msg.id}
-                        className={`flex flex-col max-w-[70%] ${
+                        className={`flex flex-col max-w-[70%] group ${
                           isMe ? "ml-auto items-end" : "mr-auto items-start"
                         }`}
                       >
-                        <div
-                          className={`p-3 rounded-xl text-sm ${
-                            isMe
-                              ? "bg-primary text-primary-foreground rounded-tr-sm"
-                              : "bg-muted text-foreground rounded-tl-sm"
-                          }`}
-                        >
-                          {msg.text}
-                        </div>
-                        <span className="text-[10px] text-muted-foreground mt-1 px-1 font-mono">
-                          {new Date(msg.timestamp).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </span>
+                        {editingMessageId === msg.id ? (
+                          <div className="flex gap-2 items-center w-full">
+                            <Input
+                              value={editingText}
+                              onChange={(e) => setEditingText(e.target.value)}
+                              className="text-xs bg-card py-1 h-8"
+                            />
+                            <Button
+                              size="sm"
+                              onClick={handleSaveEdit}
+                              className="h-8 py-1"
+                            >
+                              Save
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setEditingMessageId(null)}
+                              className="h-8 py-1"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        ) : (
+                          <>
+                            <div
+                              className={`p-3 rounded-xl text-sm ${
+                                isMe
+                                  ? "bg-primary text-primary-foreground rounded-tr-sm"
+                                  : "bg-muted text-foreground rounded-tl-sm"
+                              }`}
+                            >
+                              {msg.text}
+                            </div>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-[10px] text-muted-foreground px-1 font-mono">
+                                {new Date(msg.timestamp).toLocaleTimeString(
+                                  [],
+                                  {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  },
+                                )}
+                              </span>
+                              {isMe && (
+                                <button
+                                  onClick={() => startEdit(msg.id, msg.text)}
+                                  className="text-[10px] text-muted-foreground hover:text-primary transition-colors opacity-0 group-hover:opacity-100"
+                                >
+                                  Edit
+                                </button>
+                              )}
+                            </div>
+                          </>
+                        )}
                       </div>
                     );
                   })
