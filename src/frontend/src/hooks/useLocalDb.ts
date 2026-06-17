@@ -23,6 +23,10 @@ export interface LocalDonor {
   bloodType: string;
   phone: string;
   address: string;
+  division?: string;
+  district?: string;
+  subDistrict?: string;
+  area?: string;
   lat: number;
   lng: number;
   isAvailable: boolean;
@@ -36,6 +40,7 @@ export interface LocalUser {
   name: string;
   role: "admin" | "donor" | "shopkeeper" | "viewer";
   password?: string;
+  isVerified?: boolean;
 }
 
 export interface ChatMessage {
@@ -76,6 +81,7 @@ interface LocalDbState {
    updatePassword: (userId: string, newPassword: string) => void;
    adminChangeUserRole: (userId: string, newRole: LocalUser["role"]) => void;
    updateUserRole: (userId: string, newRole: LocalUser["role"]) => void;
+   verifyUser: (userId: string) => void;
   
   // Donor actions
   addDonor: (donor: Omit<LocalDonor, "isAvailable" | "donationCount">) => void;
@@ -96,6 +102,7 @@ interface LocalDbState {
   
   // Feedback actions
   submitReport: (userId: string, userName: string, category: FeedbackReport["category"], message: string) => void;
+  deleteReport: (reportId: string) => void;
 }
 
 const FOUR_MONTHS_MS = 120 * 24 * 60 * 60 * 1000;
@@ -107,10 +114,10 @@ export const useLocalDb = create<LocalDbState>()(
       language: "en",
       theme: "light",
       users: [
-        { id: "admin-1", email: "admin@bloodconnect.org", name: "System Admin", role: "admin", password: "admin123" },
-        { id: "donor-self", email: "donor@gmail.com", name: "Rahul Ahmed", role: "donor", password: "password123" },
-        { id: "shopkeeper-1", email: "shop@medcare.com", name: "Mr. Kabir", role: "shopkeeper", password: "password123" },
-        { id: "viewer-1", email: "viewer@gmail.com", name: "Sajid Hasan", role: "viewer", password: "password123" },
+        { id: "admin-1", email: "admin@bloodconnect.org", name: "System Admin", role: "admin", password: "admin123", isVerified: true },
+        { id: "donor-self", email: "donor@gmail.com", name: "Rahul Ahmed", role: "donor", password: "password123", isVerified: true },
+        { id: "shopkeeper-1", email: "shop@medcare.com", name: "Mr. Kabir", role: "shopkeeper", password: "password123", isVerified: true },
+        { id: "viewer-1", email: "viewer@gmail.com", name: "Sajid Hasan", role: "viewer", password: "password123", isVerified: true },
       ],
       donors: [
         {
@@ -215,10 +222,15 @@ export const useLocalDb = create<LocalDbState>()(
       registerUser: (email, name, role, password) =>
         {
           const id = Math.random().toString(36).substring(2, 9);
-          const newUser: LocalUser = { id, email, name, role, password: password || "password123" };
+          const newUser: LocalUser = { id, email, name, role, password: password || "password123", isVerified: false };
           set((state) => ({ users: [...state.users, newUser] }));
           return newUser;
         },
+      verifyUser: (userId) =>
+        set((state) => ({
+          users: state.users.map((u) => (u.id === userId ? { ...u, isVerified: true } : u)),
+          currentUser: state.currentUser?.id === userId ? { ...state.currentUser, isVerified: true } : state.currentUser,
+        })),
       updateUserEmail: (userId, newEmail) =>
         set((state) => ({
           users: state.users.map((u) => (u.id === userId ? { ...u, email: newEmail } : u)),
@@ -344,6 +356,10 @@ export const useLocalDb = create<LocalDbState>()(
           reports: [...state.reports, newReport],
         }));
       },
+      deleteReport: (reportId) =>
+        set((state) => ({
+          reports: state.reports.filter((r) => r.id !== reportId),
+        })),
     }),
     {
       name: "blood-connect-db",

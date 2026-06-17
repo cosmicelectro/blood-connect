@@ -1,7 +1,7 @@
 import { useLocalDb } from "./useLocalDb";
 
 export function useAuth() {
-  const { currentUser, setCurrentUser, registerUser, users, language, theme, setLanguage, setTheme, updatePassword, adminChangeUserRole } = useLocalDb();
+  const { currentUser, setCurrentUser, registerUser, users, language, theme, setLanguage, setTheme, updatePassword, adminChangeUserRole, verifyUser } = useLocalDb();
 
   const loginWithOAuth = (provider: "google" | "facebook", defaultRole: "donor" | "shopkeeper" | "viewer", email?: string) => {
   // Use provided email if given, otherwise generate a simulated one
@@ -27,6 +27,9 @@ export function useAuth() {
     if (password && user.password !== password) {
       throw new Error("Incorrect password. Please try again.");
     }
+    if (user.isVerified === false) {
+      throw new Error("unverified:" + user.id);
+    }
     setCurrentUser(user);
     return user;
   };
@@ -37,7 +40,8 @@ export function useAuth() {
       throw new Error("Email already registered. Please login instead.");
     }
     const newUser = registerUser(email, name, role, password);
-    setCurrentUser(newUser);
+    // Do not setCurrentUser here since they are unverified
+    // setCurrentUser(newUser); 
     return newUser;
   };
 
@@ -70,6 +74,7 @@ export function useAuth() {
     registerNewProfile,
     adminChangeUserRole,
     updatePassword,
+    verifyUser,
     loginStatus: currentUser ? "success" : "idle",
   };
 }

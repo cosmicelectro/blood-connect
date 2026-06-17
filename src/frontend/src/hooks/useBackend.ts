@@ -35,12 +35,16 @@ export function useAllDonors() {
 
 export function useSearchDonors(
   bloodType: string,
+  division: string,
+  district: string,
+  subDistrict: string,
+  area: string,
   seekerLat: number,
   seekerLng: number,
   enabled: boolean,
 ) {
   return useQuery({
-    queryKey: ["donors-search", bloodType, seekerLat, seekerLng],
+    queryKey: ["donors-search", bloodType, division, district, subDistrict, area, seekerLat, seekerLng],
     enabled,
     queryFn: async () => {
       const db = useLocalDb.getState();
@@ -54,24 +58,42 @@ export function useSearchDonors(
         const dist = (seekerLat !== 0 || seekerLng !== 0) 
           ? haversineKm(seekerLat, seekerLng, d.lat, d.lng)
           : 0;
+          
+        let matchScore = 0;
+        if (area && d.area?.toLowerCase() === area.toLowerCase()) matchScore += 1000;
+        if (subDistrict && d.subDistrict?.toLowerCase() === subDistrict.toLowerCase()) matchScore += 100;
+        if (district && d.district?.toLowerCase() === district.toLowerCase()) matchScore += 10;
+        if (division && d.division?.toLowerCase() === division.toLowerCase()) matchScore += 1;
+
         return {
           id: d.id,
           name: d.name,
           address: d.address,
           phone: d.phone,
           bloodType: d.bloodType,
+          division: d.division,
+          district: d.district,
+          subDistrict: d.subDistrict,
+          area: d.area,
           isAvailable: d.isAvailable,
           lat: d.lat,
           lng: d.lng,
           distanceKm: Number(dist.toFixed(1)),
           donationCount: d.donationCount,
+          matchScore,
         };
       });
 
-      // Sort by distance if seeker location is present
-      if (seekerLat !== 0 || seekerLng !== 0) {
-        mapped.sort((a, b) => a.distanceKm - b.distanceKm);
-      }
+      // Sort by match score first (descending), then by distance (ascending)
+      mapped.sort((a, b) => {
+        if (a.matchScore !== b.matchScore) {
+          return b.matchScore - a.matchScore;
+        }
+        if (seekerLat !== 0 || seekerLng !== 0) {
+          return a.distanceKm - b.distanceKm;
+        }
+        return 0;
+      });
 
       return mapped;
     },
@@ -95,6 +117,10 @@ export function useMyProfile() {
         address: donor.address,
         phone: donor.phone,
         bloodType: donor.bloodType,
+        division: donor.division,
+        district: donor.district,
+        subDistrict: donor.subDistrict,
+        area: donor.area,
         isAvailable: donor.isAvailable,
         lat: donor.lat,
         lng: donor.lng,
@@ -116,9 +142,13 @@ export function useRegisterDonor() {
         name: form.name,
         phone: form.phone,
         address: form.address,
+        division: form.division,
+        district: form.district,
+        subDistrict: form.subDistrict,
+        area: form.area,
         bloodType: form.bloodType,
-        lat: form.lat,
-        lng: form.lng,
+        lat: form.lat || 0,
+        lng: form.lng || 0,
       });
 
       return {
@@ -143,8 +173,12 @@ export function useUpdateProfile() {
         name: form.name,
         address: form.address,
         phone: form.phone,
-        lat: form.lat,
-        lng: form.lng,
+        division: form.division,
+        district: form.district,
+        subDistrict: form.subDistrict,
+        area: form.area,
+        lat: form.lat || 0,
+        lng: form.lng || 0,
       });
 
       return {
@@ -270,6 +304,20 @@ export function useSubmitReport() {
     mutationFn: async (payload: { userId: string; userName: string; category: any; message: string }) => {
       const db = useLocalDb.getState();
       db.submitReport(payload.userId, payload.userName, payload.category, payload.message);
+      return { ok: true };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["reports"] });
+    },
+  });
+}
+
+export function useDeleteReport() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (reportId: string) => {
+      const db = useLocalDb.getState();
+      db.deleteReport(reportId);
       return { ok: true };
     },
     onSuccess: () => {

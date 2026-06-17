@@ -9,7 +9,7 @@ import { useTranslate } from "../lib/translations";
 import { toast } from "sonner";
 
 export function AuthPage() {
-  const { loginWithOAuth, loginWithCredentials, registerNewProfile, language } = useAuth();
+  const { loginWithOAuth, loginWithCredentials, registerNewProfile, language, verifyUser } = useAuth();
   const t = useTranslate(language);
 
   const [showPassword, setShowPassword] = useState(false);
@@ -26,6 +26,9 @@ export function AuthPage() {
     provider: null,
   });
   const [oauthLoading, setOauthLoading] = useState(false);
+  
+  const [verificationUser, setVerificationUser] = useState<any>(null);
+  const [verificationCode, setVerificationCode] = useState("");
 
   const handleOAuthClick = (provider: "google" | "facebook") => {
     // Open OAuth entry popup for the selected provider
@@ -43,15 +46,17 @@ export function AuthPage() {
 
     try {
       if (isSignUp) {
+        if (password.length < 8) {
+          toast.error("Password must be at least 8 characters long.");
+          return;
+        }
         if (password !== confirmPassword) {
           toast.error("Passwords do not match.");
           return;
         }
         const userObj = registerNewProfile(email, name || email.split("@")[0], role, password);
-        toast.success(`Registration complete! Welcome ${userObj.name}.`);
-        setTimeout(() => {
-          window.location.href = role === "donor" ? "/donor" : role === "shopkeeper" ? "/shopkeeper" : "/";
-        }, 800);
+        setVerificationUser(userObj);
+        toast.info("A verification code has been sent to your email.");
       } else {
         const userObj = loginWithCredentials(email, password);
         toast.success(`Success! Logged in as ${userObj.name} (${userObj.role})`);
@@ -60,7 +65,13 @@ export function AuthPage() {
         }, 800);
       }
     } catch (err: any) {
-      toast.error(err.message || "Authentication failed");
+      if (err.message?.startsWith("unverified:")) {
+        const id = err.message.split(":")[1];
+        setVerificationUser({ id, email, role: "unknown" });
+        toast.info("Please verify your email to continue.");
+      } else {
+        toast.error(err.message || "Authentication failed");
+      }
     }
   };
 
@@ -275,6 +286,62 @@ export function AuthPage() {
                     }, 800);
                   }}>{t("login")}</Button>
                   <Button variant="outline" className="w-full mt-2" onClick={() => setOauthPopup({ isOpen: false, provider: null })}>Cancel</Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Email Verification Modal */}
+          {verificationUser && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+              <div className="w-full max-w-sm rounded-xl border border-border bg-card p-6 shadow-2xl animate-in zoom-in-95 text-center">
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                  <Mail className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold font-display mb-2">Verify Your Email</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  We've simulated sending a 6-digit verification code to <strong>{verificationUser.email}</strong>. For this demo, type any 6 digits (e.g. 123456) to verify.
+                </p>
+                <div className="space-y-4">
+                  <Input
+                    placeholder="Enter 6-digit code"
+                    value={verificationCode}
+                    onChange={(e) => setVerificationCode(e.target.value)}
+                    maxLength={6}
+                    className="text-center tracking-widest font-mono text-lg"
+                  />
+                  <Button 
+                    className="w-full" 
+                    onClick={() => {
+                      if (verificationCode.length >= 6) {
+                        // Call the injected verifyUser method
+                        verifyUser(verificationUser.id);
+                        toast.success("Email verified successfully! You can now log in.");
+                        setVerificationUser(null);
+                        setVerificationCode("");
+                        // Optionally login immediately or just let them login with credentials
+                        if (verificationUser.role !== "unknown") {
+                          loginWithCredentials(verificationUser.email, password);
+                          setTimeout(() => {
+                            window.location.href = verificationUser.role === "admin" ? "/admin" : verificationUser.role === "donor" ? "/donor" : verificationUser.role === "shopkeeper" ? "/shopkeeper" : "/";
+                          }, 800);
+                        } else {
+                          // They were trying to login but unverified, now verified
+                          loginWithCredentials(verificationUser.email, password);
+                          setTimeout(() => {
+                            window.location.href = "/"; // redirect to home, auth provider will resolve exact dashboard
+                          }, 800);
+                        }
+                      } else {
+                        toast.error("Please enter a valid 6-digit code.");
+                      }
+                    }}
+                  >
+                    Verify Email
+                  </Button>
+                  <Button variant="ghost" className="w-full" onClick={() => setVerificationUser(null)}>
+                    Cancel
+                  </Button>
                 </div>
               </div>
             </div>

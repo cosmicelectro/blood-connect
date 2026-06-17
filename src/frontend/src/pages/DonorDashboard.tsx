@@ -68,6 +68,10 @@ interface EditProfilePanelProps {
   initialId: string;
   initialName: string;
   initialAddress: string;
+  initialDivision?: string;
+  initialDistrict?: string;
+  initialSubDistrict?: string;
+  initialArea?: string;
   initialPhone: string;
   initialLat: number;
   initialLng: number;
@@ -78,6 +82,10 @@ function EditProfilePanel({
   initialId,
   initialName,
   initialAddress,
+  initialDivision,
+  initialDistrict,
+  initialSubDistrict,
+  initialArea,
   initialPhone,
   initialLat,
   initialLng,
@@ -88,6 +96,10 @@ function EditProfilePanel({
     id: initialId,
     name: initialName,
     address: initialAddress,
+    division: initialDivision || "",
+    district: initialDistrict || "",
+    subDistrict: initialSubDistrict || "",
+    area: initialArea || "",
     phone: initialPhone,
     lat: initialLat,
     lng: initialLng,
@@ -168,14 +180,56 @@ function EditProfilePanel({
         </div>
       </div>
 
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label htmlFor="edit-division">Division</Label>
+          <Input
+            id="edit-division"
+            value={form.division}
+            onChange={(e) => set("division", e.target.value)}
+            placeholder="e.g. Dhaka"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="edit-district">District</Label>
+          <Input
+            id="edit-district"
+            value={form.district}
+            onChange={(e) => set("district", e.target.value)}
+            placeholder="e.g. Dhaka"
+          />
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label htmlFor="edit-subDistrict">Sub-district / Upazila</Label>
+          <Input
+            id="edit-subDistrict"
+            value={form.subDistrict}
+            onChange={(e) => set("subDistrict", e.target.value)}
+            placeholder="e.g. Dhanmondi"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="edit-area">Area / Ward</Label>
+          <Input
+            id="edit-area"
+            value={form.area}
+            onChange={(e) => set("area", e.target.value)}
+            placeholder="e.g. Road 15"
+          />
+        </div>
+      </div>
+
       <div className="space-y-1.5">
-        <Label htmlFor="edit-address">Address</Label>
+        <Label htmlFor="edit-address">Full Address Line</Label>
         <Input
           id="edit-address"
           required
           value={form.address}
           onChange={(e) => set("address", e.target.value)}
-          placeholder="Street, City, State"
+          placeholder="Street, Building, etc."
           data-ocid="donor.edit_address_input"
         />
       </div>
@@ -393,7 +447,7 @@ export function DonorDashboard() {
             <Separator className="my-5" />
 
             <div className="divide-y divide-border/60 text-sm">
-              <InfoRow icon={<MapPin className="h-4 w-4" />} label="Address" value={profile.address} />
+              <InfoRow icon={<MapPin className="h-4 w-4" />} label="Address" value={`${[profile.area, profile.subDistrict, profile.district, profile.division].filter(Boolean).join(", ")} - ${profile.address}`} />
               <InfoRow icon={<Phone className="h-4 w-4" />} label="Phone" value={profile.phone} />
               <div className="flex justify-between py-3">
                 <span className="font-semibold text-muted-foreground">Total Donations:</span>
@@ -420,6 +474,10 @@ export function DonorDashboard() {
                 initialId={profile.id}
                 initialName={profile.name}
                 initialAddress={profile.address}
+                initialDivision={(profile as any).division}
+                initialDistrict={(profile as any).district}
+                initialSubDistrict={(profile as any).subDistrict}
+                initialArea={(profile as any).area}
                 initialPhone={profile.phone}
                 initialLat={profile.lat}
                 initialLng={profile.lng}

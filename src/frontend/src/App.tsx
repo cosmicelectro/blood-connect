@@ -13,6 +13,7 @@ import { ShopsPage } from "./pages/ShopsPage";
 import { AuthPage } from "./pages/AuthPage";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { ShopkeeperDashboard } from "./pages/ShopkeeperDashboard";
+import { ChatPage } from "./pages/ChatPage";
 import { useAuth } from "./hooks/useAuth";
 import { Navigate } from "@tanstack/react-router";
 import { ProfilePage } from "./pages/ProfilePage";
@@ -80,6 +81,16 @@ const profileRoute = createRoute({
   },
 });
 
+const chatRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/chat",
+  component: () => {
+    const { currentUser } = useAuth();
+    if (!currentUser) return <Navigate to="/auth" />;
+    return <ChatPage />;
+  },
+});
+
 const donorRegisterRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/donor/register",
@@ -103,6 +114,7 @@ const routeTree = rootRoute.addChildren([
   adminRoute,
   shopkeeperRoute,
   profileRoute,
+  chatRoute,
 ]);
 
 const router = createRouter({ routeTree });

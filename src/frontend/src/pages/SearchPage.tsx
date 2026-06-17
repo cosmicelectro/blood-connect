@@ -44,6 +44,10 @@ export function SearchPage() {
 
   const [activeTab, setActiveTab] = useState<"search" | "leaderboard">("search");
   const [bloodTypeFilter, setBloodTypeFilter] = useState<string>("all");
+  const [division, setDivision] = useState("");
+  const [district, setDistrict] = useState("");
+  const [subDistrict, setSubDistrict] = useState("");
+  const [area, setArea] = useState("");
   const [locationState, setLocationState] = useState<LocationState>({ status: "idle" });
   const [searchTriggered, setSearchTriggered] = useState(false);
   
@@ -70,6 +74,10 @@ export function SearchPage() {
     refetch: refetchSearch,
   } = useSearchDonors(
     bloodTypeFilter === "all" ? "" : bloodTypeFilter,
+    division,
+    district,
+    subDistrict,
+    area,
     hasLocation ? locationState.lat : 0,
     hasLocation ? locationState.lng : 0,
     searchTriggered && hasLocation,
@@ -135,6 +143,10 @@ export function SearchPage() {
 
   function handleReset() {
     setBloodTypeFilter("all");
+    setDivision("");
+    setDistrict("");
+    setSubDistrict("");
+    setArea("");
     setLocationState({ status: "idle" });
     setSearchTriggered(false);
   }
@@ -198,6 +210,37 @@ export function SearchPage() {
                   <option key={t} value={t}>{t}</option>
                 ))}
               </select>
+
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  placeholder="Division"
+                  className="w-full border border-border bg-card p-2 rounded-md text-sm outline-none"
+                  value={division}
+                  onChange={(e) => setDivision(e.target.value)}
+                />
+                <input
+                  type="text"
+                  placeholder="District"
+                  className="w-full border border-border bg-card p-2 rounded-md text-sm outline-none"
+                  value={district}
+                  onChange={(e) => setDistrict(e.target.value)}
+                />
+                <input
+                  type="text"
+                  placeholder="Sub-district / Upazila"
+                  className="w-full border border-border bg-card p-2 rounded-md text-sm outline-none"
+                  value={subDistrict}
+                  onChange={(e) => setSubDistrict(e.target.value)}
+                />
+                <input
+                  type="text"
+                  placeholder="Area / Ward"
+                  className="w-full border border-border bg-card p-2 rounded-md text-sm outline-none"
+                  value={area}
+                  onChange={(e) => setArea(e.target.value)}
+                />
+              </div>
 
               <Button
                 variant="outline"
@@ -272,7 +315,7 @@ export function SearchPage() {
                               )}
                             </h3>
                             <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                              <MapPin className="h-3 w-3" /> {donor.address}
+                              <MapPin className="h-3 w-3" /> {[donor.area, donor.subDistrict, donor.district, donor.division].filter(Boolean).join(", ")} {donor.address ? `- ${donor.address}` : ""}
                               {hasLocation && donor.distanceKm > 0 && (
                                 <span className="font-bold text-primary font-mono ml-1">
                                   ({donor.distanceKm} {t("kmAway")})

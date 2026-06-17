@@ -48,6 +48,7 @@ export function Layout({ children }: LayoutProps) {
   ];
 
   if (isLoggedIn) {
+    navItems.push({ to: "/chat", label: language === "bn" ? "মেসেজ" : "Messages" });
     if (role === "admin") {
       navItems.push({ to: "/admin", label: t("adminPanel") });
     } else if (role === "donor") {

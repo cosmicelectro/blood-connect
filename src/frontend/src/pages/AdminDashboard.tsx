@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useLocalDb, LocalDonor, LocalShop } from "../hooks/useLocalDb";
+import { useReports, useDeleteReport } from "../hooks/useBackend";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +16,7 @@ import {
   Edit,
   Activity,
   HeartPulse,
+  MessageSquareWarning,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -24,6 +26,9 @@ export function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [editingDonor, setEditingDonor] = useState<LocalDonor | null>(null);
   const [editingShop, setEditingShop] = useState<LocalShop | null>(null);
+  
+  const { data: reports = [] } = useReports();
+  const deleteReport = useDeleteReport();
 
   const [newShopForm, setNewShopForm] = useState({
     name: "",
@@ -142,6 +147,16 @@ export function AdminDashboard() {
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Medical Shops</p>
             <p className="text-2xl font-bold font-display">{shops.length}</p>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm flex items-center gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-orange-500/10 text-orange-600">
+            <MessageSquareWarning className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Active Reports</p>
+            <p className="text-2xl font-bold font-display">{reports.length}</p>
           </div>
         </div>
       </div>
@@ -330,6 +345,34 @@ export function AdminDashboard() {
               </div>
               <Button type="submit" className="w-full mt-2">Create Shop</Button>
             </form>
+          </div>
+
+          {/* User Reports & Feedback */}
+          <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="text-lg font-bold font-display mb-4 flex items-center gap-2">
+              <MessageSquareWarning className="h-5 w-5 text-orange-600" />
+              User Reports
+            </h2>
+            <div className="space-y-3">
+              {reports.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No pending reports.</p>
+              ) : (
+                reports.map((r) => (
+                  <div key={r.id} className="border border-border rounded-lg p-3 text-sm flex flex-col gap-2">
+                    <div className="flex justify-between items-start">
+                      <span className="font-semibold">{r.userName} <span className="text-xs font-normal text-muted-foreground bg-muted px-1.5 py-0.5 rounded ml-1">{r.category}</span></span>
+                      <span className="text-[10px] text-muted-foreground">{new Date(r.timestamp).toLocaleDateString()}</span>
+                    </div>
+                    <p className="text-muted-foreground">{r.message}</p>
+                    <div className="flex justify-end mt-1">
+                      <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => deleteReport.mutate(r.id)}>
+                        Resolve / Dismiss
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       </div>
