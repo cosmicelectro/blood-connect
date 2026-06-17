@@ -48,7 +48,7 @@ export const translations = {
     noDonors: "No available donors found",
     noDonorsDesc: "Try checking other blood groups or search location ranking.",
     kmAway: "km away",
-    reportIssue: "Report Issue / Suggestion",
+    reportIssue: "Report Issue",
 
     // Medical Shops
     medicalShopsTitle: "Medical Equipment & Supply Shops",
@@ -115,7 +115,7 @@ export const translations = {
     noDonors: "কোনো রক্তদাতা পাওয়া যায়নি",
     noDonorsDesc: "অন্য রক্তের গ্রুপ দিয়ে দেখুন অথবা অবস্থান অনুসন্ধানের ব্যবহার করুন।",
     kmAway: "কি.মি. দূরে",
-    reportIssue: "ত্রুটি / পরামর্শ রিপোর্ট করুন",
+    reportIssue: "রিপোর্ট করুন",
 
     // Medical Shops
     medicalShopsTitle: "মেডিকেল যন্ত্রপাতি ও সরঞ্জাম দোকান",

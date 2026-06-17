@@ -29,6 +29,7 @@ export function AuthPage() {
   
   const [verificationUser, setVerificationUser] = useState<any>(null);
   const [verificationCode, setVerificationCode] = useState("");
+  const [generatedCode, setGeneratedCode] = useState("");
 
   const handleOAuthClick = (provider: "google" | "facebook") => {
     // Open OAuth entry popup for the selected provider
@@ -55,7 +56,15 @@ export function AuthPage() {
           return;
         }
         const userObj = registerNewProfile(email, name || email.split("@")[0], role, password);
+        
+        // Generate a random 6-digit code
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        setGeneratedCode(code);
         setVerificationUser(userObj);
+        
+        // Simulate sending email by popping an alert box
+        alert(`SIMULATED EMAIL\n\nTo: ${email}\nSubject: BloodConnect Verification Code\n\nHello ${userObj.name},\n\nYour 6-digit verification code is: ${code}\n\nPlease enter this code to verify your account.`);
+        
         toast.info("A verification code has been sent to your email.");
       } else {
         const userObj = loginWithCredentials(email, password);
@@ -67,7 +76,14 @@ export function AuthPage() {
     } catch (err: any) {
       if (err.message?.startsWith("unverified:")) {
         const id = err.message.split(":")[1];
+        
+        // Re-generate a code for unverified users trying to login
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        setGeneratedCode(code);
         setVerificationUser({ id, email, role: "unknown" });
+        
+        alert(`SIMULATED EMAIL\n\nTo: ${email}\nSubject: BloodConnect Verification Code\n\nYour new 6-digit verification code is: ${code}\n\nPlease enter this code to verify your account.`);
+        
         toast.info("Please verify your email to continue.");
       } else {
         toast.error(err.message || "Authentication failed");
@@ -300,7 +316,7 @@ export function AuthPage() {
                 </div>
                 <h3 className="text-xl font-bold font-display mb-2">Verify Your Email</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  We've simulated sending a 6-digit verification code to <strong>{verificationUser.email}</strong>. For this demo, type any 6 digits (e.g. 123456) to verify.
+                  We've sent a 6-digit verification code to <strong>{verificationUser.email}</strong>. Please check your simulated email alert.
                 </p>
                 <div className="space-y-4">
                   <Input
@@ -313,7 +329,7 @@ export function AuthPage() {
                   <Button 
                     className="w-full" 
                     onClick={() => {
-                      if (verificationCode.length >= 6) {
+                      if (verificationCode === generatedCode) {
                         // Call the injected verifyUser method
                         verifyUser(verificationUser.id);
                         toast.success("Email verified successfully! You can now log in.");
@@ -333,7 +349,7 @@ export function AuthPage() {
                           }, 800);
                         }
                       } else {
-                        toast.error("Please enter a valid 6-digit code.");
+                        toast.error("Incorrect verification code.");
                       }
                     }}
                   >

@@ -73,7 +73,7 @@ export function Layout({ children }: LayoutProps) {
     <div className="flex min-h-screen flex-col bg-background text-foreground transition-colors duration-200">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border bg-card shadow-sm">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
+        <div className="mx-auto flex h-16 w-full max-w-[1400px] items-center justify-between px-4">
           
           {/* Brand */}
           <Link
@@ -98,14 +98,14 @@ export function Layout({ children }: LayoutProps) {
 
           {/* Desktop nav */}
           <nav
-            className="hidden items-center gap-1 md:flex"
+            className="hidden items-center gap-1 md:flex flex-shrink-0"
             aria-label="Main navigation"
           >
             {navItems.map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
-                className={`rounded-md px-3 py-2 text-sm font-medium transition-smooth ${
+                className={`rounded-md px-2 lg:px-3 py-2 text-sm font-medium transition-smooth ${
                   currentPath === link.to
                     ? "bg-primary/10 text-primary"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -117,7 +117,7 @@ export function Layout({ children }: LayoutProps) {
           </nav>
 
           {/* Global Controls & Auth Actions */}
-          <div className="hidden items-center gap-3 md:flex">
+          <div className="hidden items-center gap-2 lg:gap-3 md:flex">
             
             {/* Report Button */}
             {isLoggedIn && (
@@ -125,7 +125,7 @@ export function Layout({ children }: LayoutProps) {
                 variant="ghost"
                 size="sm"
                 onClick={() => setReportOpen(true)}
-                className="text-xs text-muted-foreground hover:text-primary"
+                className="text-xs text-muted-foreground hover:text-primary px-2"
               >
                 {t("reportIssue")}
               </Button>
@@ -144,7 +144,7 @@ export function Layout({ children }: LayoutProps) {
             {/* Theme Toggle */}
             <button
               onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-              className="p-2 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+              className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
               aria-label="Toggle Theme"
             >
               {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4 text-amber-500" />}
@@ -153,11 +153,11 @@ export function Layout({ children }: LayoutProps) {
             {/* Auth Actions */}
             {isLoggedIn ? (
               <div className="relative flex items-center gap-2">
-                <div className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider ${getRoleBadgeColor()}`}>
-                  <RefreshCw className="h-3 w-3" />
+                <div className={`flex items-center gap-1.5 rounded-full px-2 lg:px-3 py-1 text-xs font-semibold uppercase tracking-wider ${getRoleBadgeColor()}`}>
+                  <RefreshCw className="h-3 w-3 hidden lg:block" />
                   {role}
                 </div>
-                <div className="text-sm font-semibold max-w-[120px] truncate">
+                <div className="text-sm font-semibold max-w-[120px] truncate hidden xl:block">
                   {user?.name}
                 </div>
 
