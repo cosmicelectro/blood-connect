@@ -144,16 +144,6 @@ export function AdminDashboard() {
             <p className="text-2xl font-bold font-display">{shops.length}</p>
           </div>
         </div>
-
-        <div className="rounded-xl border border-border bg-card p-5 shadow-sm flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-red-500/10 text-red-500">
-            <Activity className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Liters Registered</p>
-            <p className="text-2xl font-bold font-display">{(donors.length * 0.47).toFixed(2)}L</p>
-          </div>
-        </div>
       </div>
 
       {/* ── Main Workspaces ── */}

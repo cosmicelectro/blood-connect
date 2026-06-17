@@ -1,19 +1,21 @@
 import React, { useState } from "react";
 import { useAuth } from "../hooks/useAuth";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
+import { Eye, EyeOff, Lock } from "lucide-react";
+import { useTranslate } from "../lib/translations";
 
 export function ProfilePage() {
-  const { user, updatePassword, logout } = useAuth();
+  const { currentUser, updatePassword, logout, language } = useAuth();
+  const t = useTranslate(language);
+  const [showPwd, setShowPwd] = useState(false);
+
   const [oldPwd, setOldPwd] = useState("");
   const [newPwd, setNewPwd] = useState("");
   const [confirmPwd, setConfirmPwd] = useState("");
-  const [showPwd, setShowPwd] = useState(false);
-
-  if (!user) {
+  if (!currentUser) {
     return <div className="p-8 text-center">Loading...</div>;
   }
 

@@ -221,16 +221,18 @@ export const useLocalDb = create<LocalDbState>()(
       updateUserEmail: (userId, newEmail) =>
         set((state) => ({
           users: state.users.map((u) => (u.id === userId ? { ...u, email: newEmail } : u)),
-        })), {
+        })),
+      adminChangeUserRole: (userId, newRole) =>
         set((state) => {
-          const updatedUsers = state.users.map((u) => (u.id === userId ? { ...u, role: newRole } : u));
-          let updatedCurrentUser = state.currentUser;
-          if (state.currentUser && state.currentUser.id === userId) {
-            updatedCurrentUser = { ...state.currentUser, role: newRole };
+          if (state.currentUser?.role !== "admin") {
+            console.warn("Only admin can change other users' roles");
+            return state;
           }
+          const updatedUsers = state.users.map((u) => (u.id === userId ? { ...u, role: newRole } : u));
+          const updatedCurrentUser =
+            state.currentUser && state.currentUser.id === userId ? { ...state.currentUser, role: newRole } : state.currentUser;
           return { users: updatedUsers, currentUser: updatedCurrentUser };
-        });
-      },
+        }),
       addDonor: (donor) =>
         set((state) => ({
           donors: [...state.donors, { ...donor, isAvailable: true, donationCount: 0 }],

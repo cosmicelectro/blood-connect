@@ -1,7 +1,7 @@
 import { useLocalDb } from "./useLocalDb";
 
 export function useAuth() {
-  const { currentUser, setCurrentUser, registerUser, users, changeRole, language, theme, setLanguage, setTheme } = useLocalDb();
+  const { currentUser, setCurrentUser, registerUser, users, language, theme, setLanguage, setTheme, updatePassword, adminChangeUserRole } = useLocalDb();
 
   const loginWithOAuth = (provider: "google" | "facebook", defaultRole: "donor" | "shopkeeper" | "viewer", email?: string) => {
   // Use provided email if given, otherwise generate a simulated one
@@ -49,12 +49,15 @@ export function useAuth() {
     // refresh currentUser
     setCurrentUser({ ...currentUser, password: newPwd });
   };
+  // Logout function to clear user session and refresh
+  const logout = () => {
     setCurrentUser(null);
     // Hard refresh to home page to clear all UI dashboards
     window.location.href = "/";
   };
 
   return {
+    currentUser,
     user: currentUser,
     identity: currentUser,
     principal: currentUser,
@@ -72,11 +75,7 @@ export function useAuth() {
     loginWithOAuth,
     loginWithCredentials,
     registerNewProfile,
-    changeRole: (newRole: "admin" | "donor" | "shopkeeper" | "viewer") => {
-      if (!currentUser) return;
-      const db = useLocalDb.getState();
-      db.updateUserRole(currentUser.id, newRole);
-    },
+    adminChangeUserRole,
     updatePassword,
     loginStatus: currentUser ? "success" : "idle",
   };

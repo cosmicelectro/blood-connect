@@ -18,6 +18,7 @@ export function AuthPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
   const [role, setRole] = useState<"donor" | "shopkeeper" | "viewer">("viewer");
+  const [isSignUp, setIsSignUp] = useState(false);
 
   // OAuth Popup Simulation State
   const [oauthPopup, setOauthPopup] = useState<{ isOpen: boolean; provider: "google" | "facebook" | null }>({
@@ -27,22 +28,11 @@ export function AuthPage() {
   const [oauthLoading, setOauthLoading] = useState(false);
 
   const handleOAuthClick = (provider: "google" | "facebook") => {
+    // Open OAuth entry popup for the selected provider
     setOauthPopup({ isOpen: true, provider });
-    setOauthLoading(true);
-    // Simulate accounts loading inside oauth screen
-    setTimeout(() => {
-      setOauthLoading(false);
-    }, 1200);
   };
 
-  const handleOAuthSelectAccount = (accountEmail: string, accountName: string) => {
-    setOauthPopup({ isOpen: false, provider: null });
-    const userObj = loginWithOAuth(oauthPopup.provider!, role);
-    toast.success(`Successfully authenticated via ${oauthPopup.provider} as ${userObj.role}!`);
-    setTimeout(() => {
-      window.location.href = userObj.role === "admin" ? "/admin" : userObj.role === "donor" ? "/donor" : userObj.role === "shopkeeper" ? "/shopkeeper" : "/";
-    }, 800);
-  };
+
 
   const handleCredentialsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -254,49 +244,41 @@ export function AuthPage() {
       </div>
 
       {/* OAuth Simulated Consent Popup Modal */}
-      {oauthPopup.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-sm rounded-xl border border-border bg-card p-6 shadow-2xl animate-in zoom-in-95">
-            <h3 className="text-base font-bold font-display border-b border-border pb-3 flex items-center gap-2">
-              {oauthPopup.provider === "google" ? (
-                <FaGoogle className="h-5 w-5 text-red-500" />
-              ) : (
-                <FaFacebookF className="h-5 w-5 text-blue-600" />
-              )}
-              Sign in with {oauthPopup.provider === "google" ? "Google" : "Facebook"}
-            </h3>
-
-            {/* OAuth Email Input */}
-            {oauthLoading ? (
-              <div className="py-12 flex flex-col items-center justify-center gap-3">
-                <Loader2 className="h-8 w-8 text-primary animate-spin" />
-                <span className="text-xs text-muted-foreground">Loading accounts list...</span>
-              </div>
-            ) : (
-              <div className="py-4 space-y-3">
-                <p className="text-xs text-muted-foreground mb-1">Enter your {oauthPopup.provider} email to continue:</p>
-                <Input
-                  id="oauth-email"
-                  placeholder="you@example.com"
-                  className="pl-9"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-                <Button variant="default" className="w-full mt-2" onClick={() => {
-                  const userObj = loginWithOAuth(oauthPopup.provider!, role, email);
-                    // No manual DB update needed; loginWithOAuth handles email.
+                {oauthPopup.isOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+              <div className="w-full max-w-sm rounded-xl border border-border bg-card p-6 shadow-2xl animate-in zoom-in-95">
+                <h3 className="text-base font-bold font-display border-b border-border pb-3 flex items-center gap-2">
+                  {oauthPopup.provider === "google" ? (
+                    <FaGoogle className="h-5 w-5 text-red-500" />
+                  ) : (
+                    <FaFacebookF className="h-5 w-5 text-blue-600" />
+                  )}
+                  Sign in with {oauthPopup.provider === "google" ? "Google" : "Facebook"}
+                </h3>
+                <div className="py-4 space-y-3">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Enter your {oauthPopup.provider} email to continue:
+                  </p>
+                  <Input
+                    id="oauth-email"
+                    placeholder="you@example.com"
+                    className="pl-9"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                  <Button variant="default" className="w-full mt-2" onClick={() => {
+                    const userObj = loginWithOAuth(oauthPopup.provider!, role, email);
                     toast.success(`Successfully authenticated via ${oauthPopup.provider} as ${userObj.role}!`);
                     setOauthPopup({ isOpen: false, provider: null });
                     setTimeout(() => {
                       window.location.href = userObj.role === "admin" ? "/admin" : userObj.role === "donor" ? "/donor" : userObj.role === "shopkeeper" ? "/shopkeeper" : "/";
                     }, 800);
-                }}>{t("continue")}</Button>
-                <Button variant="outline" className="w-full mt-2" onClick={() => setOauthPopup({ isOpen: false, provider: null })}>Cancel</Button>
+                  }}>{t("continue")}</Button>
+                  <Button variant="outline" className="w-full mt-2" onClick={() => setOauthPopup({ isOpen: false, provider: null })}>Cancel</Button>
+                </div>
               </div>
-            )}
-          </div>
-        </div>
-      )}
+            </div>
+          )}
     </div>
   );
 }

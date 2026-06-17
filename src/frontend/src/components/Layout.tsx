@@ -12,7 +12,6 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [showRoleMenu, setShowRoleMenu] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   
   const {
@@ -22,7 +21,6 @@ export function Layout({ children }: LayoutProps) {
     logout,
     user,
     role,
-    changeRole,
     language,
     theme,
     setLanguage,
@@ -59,19 +57,7 @@ export function Layout({ children }: LayoutProps) {
     }
   }
 
-  const handleRoleChange = (newRole: "admin" | "donor" | "shopkeeper" | "viewer") => {
-    changeRole(newRole);
-    setShowRoleMenu(false);
-    if (newRole === "admin") {
-      navigate({ to: "/admin" });
-    } else if (newRole === "donor") {
-      navigate({ to: "/donor" });
-    } else if (newRole === "shopkeeper") {
-      navigate({ to: "/shopkeeper" });
-    } else {
-      navigate({ to: "/" });
-    }
-  };
+  // Role change functionality removed; roles are fixed at registration.
 
   const getRoleBadgeColor = () => {
     switch (role) {
@@ -166,40 +152,10 @@ export function Layout({ children }: LayoutProps) {
             {/* Auth Actions */}
             {isLoggedIn ? (
               <div className="relative flex items-center gap-2">
-                {/* Active Role Badge & Switcher */}
-                <button
-                  type="button"
-                  onClick={() => setShowRoleMenu(!showRoleMenu)}
-                  className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider shadow-sm transition-all hover:scale-105 ${getRoleBadgeColor()}`}
-                >
+                <div className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider ${getRoleBadgeColor()}`}>
                   <RefreshCw className="h-3 w-3" />
                   {role}
-                </button>
-
-                {showRoleMenu && (
-                  <div className="absolute right-0 top-8 mt-2 w-48 rounded-lg border border-border bg-card p-1 shadow-lg ring-1 ring-black/5 animate-in fade-in slide-in-from-top-1">
-                    <div className="px-3 py-2 text-xs font-semibold text-muted-foreground border-b border-border mb-1">
-                      Switch Active Role:
-                    </div>
-                    {(["viewer", "donor", "shopkeeper", "admin"] as const).map((r) => (
-                      <button
-                        key={r}
-                        type="button"
-                        onClick={() => handleRoleChange(r)}
-                        className={`flex w-full items-center gap-2 rounded px-2.5 py-1.5 text-left text-xs font-medium capitalize hover:bg-muted ${
-                          role === r ? "text-primary font-bold" : "text-foreground"
-                        }`}
-                      >
-                        {r === "admin" && <ShieldAlert className="h-3.5 w-3.5 text-red-500" />}
-                        {r === "donor" && <Heart className="h-3.5 w-3.5 text-primary" />}
-                        {r === "shopkeeper" && <Store className="h-3.5 w-3.5 text-blue-500" />}
-                        {r === "viewer" && <User className="h-3.5 w-3.5 text-emerald-500" />}
-                        {r}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
+                </div>
                 <div className="text-sm font-semibold max-w-[120px] truncate">
                   {user?.name}
                 </div>
@@ -275,24 +231,6 @@ export function Layout({ children }: LayoutProps) {
 
               {isLoggedIn && (
                 <div className="border-t border-border mt-2 pt-2">
-                  <p className="text-xs text-muted-foreground mb-1.5 px-3">Switch Role:</p>
-                  <div className="grid grid-cols-2 gap-1 px-3">
-                    {(["viewer", "donor", "shopkeeper", "admin"] as const).map((r) => (
-                      <button
-                        key={r}
-                        type="button"
-                        onClick={() => {
-                          handleRoleChange(r);
-                          setMenuOpen(false);
-                        }}
-                        className={`text-left text-xs capitalize py-1 px-2 rounded ${
-                          role === r ? "bg-primary/10 text-primary font-bold" : "hover:bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        {r}
-                      </button>
-                    ))}
-                  </div>
                   <Button
                     variant="ghost"
                     size="sm"
