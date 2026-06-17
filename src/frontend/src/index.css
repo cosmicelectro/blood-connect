@@ -1,11 +1,11 @@
 @tailwind base;
 @tailwind components;
+@tailwind utilities;
+
 /* Set placeholder opacity globally */
 input::placeholder {
   opacity: 0.6;
 }
-
-
 
 
 @layer base {

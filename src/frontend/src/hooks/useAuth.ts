@@ -41,14 +41,7 @@ export function useAuth() {
     return newUser;
   };
 
-  const updatePassword = (oldPwd: string, newPwd: string) => {
-    if (!currentUser) throw new Error("Not logged in");
-    if (currentUser.password !== oldPwd) throw new Error("Old password incorrect");
-    const db = useLocalDb.getState();
-    db.updatePassword(currentUser.id, newPwd);
-    // refresh currentUser
-    setCurrentUser({ ...currentUser, password: newPwd });
-  };
+
   // Logout function to clear user session and refresh
   const logout = () => {
     setCurrentUser(null);

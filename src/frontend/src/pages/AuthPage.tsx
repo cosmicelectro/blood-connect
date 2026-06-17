@@ -273,7 +273,7 @@ export function AuthPage() {
                     setTimeout(() => {
                       window.location.href = userObj.role === "admin" ? "/admin" : userObj.role === "donor" ? "/donor" : userObj.role === "shopkeeper" ? "/shopkeeper" : "/";
                     }, 800);
-                  }}>{t("continue")}</Button>
+                  }}>{t("login")}</Button>
                   <Button variant="outline" className="w-full mt-2" onClick={() => setOauthPopup({ isOpen: false, provider: null })}>Cancel</Button>
                 </div>
               </div>

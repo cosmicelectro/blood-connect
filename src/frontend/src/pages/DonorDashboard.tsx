@@ -244,6 +244,7 @@ export function DonorDashboard() {
   const [donationDateOption, setDonationDateOption] = useState<string>("today");
 
   const handleLogDonation = async () => {
+    if (!profile) return;
     if (!confirmDonate) {
       setConfirmDonate(true);
       return;
@@ -280,6 +281,7 @@ export function DonorDashboard() {
 
   const handleSendReply = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!profile) return;
     if (!replyText.trim() || !selectedThreadSenderId) return;
 
     // Find the sender's name from messages list
@@ -329,7 +331,7 @@ export function DonorDashboard() {
     );
   }
 
-  if (!profile && !isLoading) {
+  if (!profile) {
     return (
       <div className="mx-auto max-w-md px-4 py-20 text-center" data-ocid="donor.unregistered_state">
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">

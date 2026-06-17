@@ -69,11 +69,13 @@ interface LocalDbState {
   // App preferences
   setLanguage: (lang: "en" | "bn") => void;
   setTheme: (theme: "light" | "dark") => void;
-  
-  // Auth actions
-  setCurrentUser: (user: LocalUser | null) => void;
-  registerUser: (email: string, name: string, role: LocalUser["role"], password?: string) => LocalUser;
-  updateUserEmail: (userId: string, newEmail: string) => void,
+    // Auth actions
+   setCurrentUser: (user: LocalUser | null) => void;
+   registerUser: (email: string, name: string, role: LocalUser["role"], password?: string) => LocalUser;
+   updateUserEmail: (userId: string, newEmail: string) => void;
+   updatePassword: (userId: string, newPassword: string) => void;
+   adminChangeUserRole: (userId: string, newRole: LocalUser["role"]) => void;
+   updateUserRole: (userId: string, newRole: LocalUser["role"]) => void;
   
   // Donor actions
   addDonor: (donor: Omit<LocalDonor, "isAvailable" | "donationCount">) => void;
@@ -206,7 +208,6 @@ export const useLocalDb = create<LocalDbState>()(
       },
       setCurrentUser: (user) =>
         set({ currentUser: user }),
-      // Update password for a given user id
       updatePassword: (userId: string, newPassword: string) =>
         set((state) => ({
           users: state.users.map((u) => (u.id === userId ? { ...u, password: newPassword } : u)),
@@ -228,6 +229,14 @@ export const useLocalDb = create<LocalDbState>()(
             console.warn("Only admin can change other users' roles");
             return state;
           }
+          const updatedUsers = state.users.map((u) => (u.id === userId ? { ...u, role: newRole } : u));
+          const updatedCurrentUser =
+            state.currentUser && state.currentUser.id === userId ? { ...state.currentUser, role: newRole } : state.currentUser;
+          return { users: updatedUsers, currentUser: updatedCurrentUser };
+        }),
+      // New method to update any user's role (used by admin UI)
+      updateUserRole: (userId, newRole) =>
+        set((state) => {
           const updatedUsers = state.users.map((u) => (u.id === userId ? { ...u, role: newRole } : u));
           const updatedCurrentUser =
             state.currentUser && state.currentUser.id === userId ? { ...state.currentUser, role: newRole } : state.currentUser;

@@ -85,7 +85,7 @@ export function SearchPage() {
   const isLoading = searchTriggered && hasLocation ? searchLoading : allLoading;
   const hasError = searchTriggered && hasLocation ? searchError : allError;
 
-  let displayedDonors = [];
+  let displayedDonors: any[] = [];
   if (searchTriggered && hasLocation && searchResults) {
     displayedDonors = searchResults;
   } else if (allDonors) {
