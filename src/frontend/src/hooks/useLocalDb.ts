@@ -151,7 +151,18 @@ export const useLocalDb = create<LocalDbState>()(
           document.documentElement.classList.remove("dark");
         }
       },
-      setCurrentUser: (user) => set({ currentUser: user }),
+      setCurrentUser: (user) => {
+        set({ currentUser: user });
+        // Trigger immediate sync to Supabase so that other components or subsequent ticks don't overwrite it
+        const state = get();
+        syncToSupabase({
+          users: state.users,
+          donors: state.donors,
+          shops: state.shops,
+          messages: state.messages,
+          reports: state.reports,
+        });
+      },
       resetStore: () =>
         set({
           users: [],
@@ -443,8 +454,18 @@ export const syncFromSupabase = async () => {
         // Keep current login state intact so users don't get logged out during updates
         const currentLocalUser = useLocalDb.getState().currentUser;
 
+        // If local user is verified, make sure they are verified in the incoming users list too
+        let incomingUsers = parsed.users || [];
+        if (currentLocalUser) {
+          incomingUsers = incomingUsers.map((u: any) =>
+            u.id === currentLocalUser.id || u.email.toLowerCase() === currentLocalUser.email.toLowerCase()
+              ? { ...u, isVerified: currentLocalUser.isVerified || u.isVerified }
+              : u
+          );
+        }
+
         useLocalDb.setState({
-          users: parsed.users || [],
+          users: incomingUsers,
           donors: parsed.donors || [],
           shops: parsed.shops || [],
           messages: parsed.messages || [],
