@@ -40,57 +40,67 @@ const shopsRoute = createRoute({
   component: ShopsPage,
 });
 
+function DonorRouteComponent() {
+  const { currentUser } = useAuth();
+  if (!currentUser) return <Navigate to="/auth" />;
+  if (currentUser.role !== "donor") return <Navigate to="/" />;
+  return <DonorDashboard />;
+}
+
+function ShopkeeperRouteComponent() {
+  const { currentUser } = useAuth();
+  if (!currentUser) return <Navigate to="/auth" />;
+  if (currentUser.role !== "shopkeeper") return <Navigate to="/" />;
+  return <ShopkeeperDashboard />;
+}
+
+function AdminRouteComponent() {
+  const { currentUser } = useAuth();
+  if (!currentUser) return <Navigate to="/auth" />;
+  if (currentUser.role !== "admin") return <Navigate to="/" />;
+  return <AdminDashboard />;
+}
+
+function ProfileRouteComponent() {
+  const { currentUser } = useAuth();
+  if (!currentUser) return <Navigate to="/auth" />;
+  return <ProfilePage />;
+}
+
+function ChatRouteComponent() {
+  const { currentUser } = useAuth();
+  if (!currentUser) return <Navigate to="/auth" />;
+  return <ChatPage />;
+}
+
 const donorRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/donor",
-  component: () => {
-    const { currentUser } = useAuth();
-    if (!currentUser) return <Navigate to="/auth" />;
-    if (currentUser.role !== "donor") return <Navigate to="/" />;
-    return <DonorDashboard />;
-  },
+  component: DonorRouteComponent,
 });
 
 const shopkeeperRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/shopkeeper",
-  component: () => {
-    const { currentUser } = useAuth();
-    if (!currentUser) return <Navigate to="/auth" />;
-    if (currentUser.role !== "shopkeeper") return <Navigate to="/" />;
-    return <ShopkeeperDashboard />;
-  },
+  component: ShopkeeperRouteComponent,
 });
 
 const adminRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/admin",
-  component: () => {
-    const { currentUser } = useAuth();
-    if (!currentUser) return <Navigate to="/auth" />;
-    if (currentUser.role !== "admin") return <Navigate to="/" />;
-    return <AdminDashboard />;
-  },
+  component: AdminRouteComponent,
 });
 
 const profileRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/profile",
-  component: () => {
-    const { currentUser } = useAuth();
-    if (!currentUser) return <Navigate to="/auth" />;
-    return <ProfilePage />;
-  },
+  component: ProfileRouteComponent,
 });
 
 const chatRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/chat",
-  component: () => {
-    const { currentUser } = useAuth();
-    if (!currentUser) return <Navigate to="/auth" />;
-    return <ChatPage />;
-  },
+  component: ChatRouteComponent,
 });
 
 const donorRegisterRoute = createRoute({
