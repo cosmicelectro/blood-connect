@@ -188,7 +188,20 @@ export const useLocalDb = create<LocalDbState>()(
           password: password || "password123",
           isVerified: true, // Auto-verify users upon registration to bypass code input alert
         };
-        set((state) => ({ users: [...state.users, newUser] }));
+        set((state) => {
+          const updatedUsers = [...state.users, newUser];
+          
+          // Trigger immediate sync to Supabase so registration state is persistent
+          syncToSupabase({
+            users: updatedUsers,
+            donors: state.donors,
+            shops: state.shops,
+            messages: state.messages,
+            reports: state.reports,
+          });
+
+          return { users: updatedUsers };
+        });
         return newUser;
       },
       verifyUser: (userId) =>
