@@ -95,9 +95,28 @@ export function useAuth() {
       throw new Error("Email already registered. Please login instead.");
     }
     const newUser = registerUser(email, name, role, password);
-    // Location data is currently unused; can be stored in donor profile later.
-    // Do not setCurrentUser here since they are unverified
-    // setCurrentUser(newUser);
+    verifyUser(newUser.id);
+    newUser.isVerified = true;
+
+    // Create donor profile automatically if they signed up as a donor
+    if (role === "donor") {
+      const { addDonor } = useLocalDb.getState();
+      addDonor({
+        id: newUser.id,
+        name: newUser.name,
+        bloodType: "O+", // Default blood type for fast registration
+        phone: "01700000000",
+        address: locationData?.area || "Sylhet",
+        division: locationData?.division || "Sylhet",
+        district: locationData?.district || "Sylhet",
+        subDistrict: locationData?.subDistrict || "Sylhet Sadar",
+        area: locationData?.area || "Sylhet",
+        lat: locationData?.lat || 24.8949,
+        lng: locationData?.lng || 91.8687,
+      });
+    }
+
+    setCurrentUser(newUser);
     return newUser;
   };
 

@@ -131,17 +131,19 @@ export function AuthPage() {
           },
         );
 
-        // Generate a random 6-digit code
-        const code = Math.floor(100000 + Math.random() * 900000).toString();
-        setGeneratedCode(code);
-        setVerificationUser(userObj);
-
-        // Simulate sending email by popping an alert box
-        alert(
-          `SIMULATED EMAIL\n\nTo: ${email}\nSubject: BloodConnect Verification Code\n\nHello ${userObj.name},\n\nYour 6-digit verification code is: ${code}\n\nPlease enter this code to verify your account.`,
-        );
-
-        toast.info("A verification code has been sent to your email.");
+        toast.success(`Success! Registered and logged in as ${userObj.name}`);
+        setTimeout(() => {
+          navigate({
+            to:
+              userObj.role === "admin"
+                ? "/admin"
+                : userObj.role === "donor"
+                ? "/donor"
+                : userObj.role === "shopkeeper"
+                ? "/shopkeeper"
+                : "/",
+          });
+        }, 800);
       } else {
         const userObj = loginWithCredentials(email, password);
         toast.success(
@@ -161,22 +163,7 @@ export function AuthPage() {
         }, 800);
       }
     } catch (err: any) {
-      if (err.message?.startsWith("unverified:")) {
-        const id = err.message.split(":")[1];
-
-        // Re-generate a code for unverified users trying to login
-        const code = Math.floor(100000 + Math.random() * 900000).toString();
-        setGeneratedCode(code);
-        setVerificationUser({ id, email, role: "unknown" });
-
-        alert(
-          `SIMULATED EMAIL\n\nTo: ${email}\nSubject: BloodConnect Verification Code\n\nYour new 6-digit verification code is: ${code}\n\nPlease enter this code to verify your account.`,
-        );
-
-        toast.info("Please verify your email to continue.");
-      } else {
-        toast.error(err.message || "Authentication failed");
-      }
+      toast.error(err.message || "Authentication failed");
     }
   };
 
