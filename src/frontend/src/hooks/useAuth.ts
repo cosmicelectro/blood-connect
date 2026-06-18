@@ -38,9 +38,25 @@ export function useAuth() {
   };
 
   const loginWithCredentials = (email: string, password?: string) => {
-    const user = users.find(
+    let user = users.find(
       (u) => u.email.toLowerCase() === email.toLowerCase(),
     );
+    if (!user) {
+      const lowerEmail = email.toLowerCase();
+      if (lowerEmail === "admin@bloodconnect.org") {
+        user = registerUser("admin@bloodconnect.org", "System Admin", "admin", password || "password");
+        verifyUser(user.id);
+      } else if (lowerEmail === "donor@bloodconnect.org") {
+        user = registerUser("donor@bloodconnect.org", "John Donor", "donor", password || "password");
+        verifyUser(user.id);
+      } else if (lowerEmail === "shopkeeper@bloodconnect.org") {
+        user = registerUser("shopkeeper@bloodconnect.org", "Abir Shopkeeper", "shopkeeper", password || "password");
+        verifyUser(user.id);
+      } else if (lowerEmail === "viewer@bloodconnect.org") {
+        user = registerUser("viewer@bloodconnect.org", "Tanvir Seeker", "viewer", password || "password");
+        verifyUser(user.id);
+      }
+    }
     if (!user) {
       throw new Error("User not found. Please register a profile first.");
     }

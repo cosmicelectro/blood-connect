@@ -132,9 +132,73 @@ const FOUR_MONTHS_MS = 120 * 24 * 60 * 60 * 1000;
 export const useLocalDb = create<LocalDbState>()(
   persist(
     (set, get) => ({
-      users: [],
-      donors: [],
-      shops: [],
+      users: [
+        {
+          id: "admin-id",
+          email: "admin@bloodconnect.org",
+          name: "System Admin",
+          role: "admin",
+          password: "password",
+          isVerified: true,
+        },
+        {
+          id: "donor-id",
+          email: "donor@bloodconnect.org",
+          name: "John Donor",
+          role: "donor",
+          password: "password",
+          isVerified: true,
+        },
+        {
+          id: "shopkeeper-id",
+          email: "shopkeeper@bloodconnect.org",
+          name: "Abir Shopkeeper",
+          role: "shopkeeper",
+          password: "password",
+          isVerified: true,
+        },
+        {
+          id: "viewer-id",
+          email: "viewer@bloodconnect.org",
+          name: "Tanvir Seeker",
+          role: "viewer",
+          password: "password",
+          isVerified: true,
+        }
+      ],
+      donors: [
+        {
+          id: "donor-id",
+          name: "John Donor",
+          bloodType: "O+",
+          phone: "01712345678",
+          address: "Sylhet Sadar",
+          division: "Sylhet",
+          district: "Sylhet",
+          subDistrict: "Sylhet Sadar",
+          area: "Zindabazar",
+          lat: 24.8949,
+          lng: 91.8687,
+          isAvailable: true,
+          donationCount: 5,
+        }
+      ],
+      shops: [
+        {
+          id: "shopkeeper-id",
+          name: "Sylhet Central Pharmacy",
+          description: "All kinds of local and imported life saving medicines.",
+          address: "Zindabazar, Sylhet",
+          phone: "01812345678",
+          website: "https://centralpharmacy.com",
+          ownerId: "shopkeeper-id",
+          products: [
+            { name: "Paracetamol", price: 10 },
+            { name: "Insulin", price: 450 }
+          ],
+          isVerified: true,
+        }
+      ],
       messages: [],
       reports: [],
       currentUser: null,
