@@ -24,7 +24,8 @@ export function useAuth() {
     const userEmail = email?.trim()
       ? email
       : `oauth-${defaultRole}@${provider}.com`;
-    let user = users.find((u) => u.email === userEmail);
+    const safeUsers = users || [];
+    let user = safeUsers.find((u) => u && u.email === userEmail);
     if (!user) {
       user = registerUser(
         userEmail,
@@ -38,8 +39,9 @@ export function useAuth() {
   };
 
   const loginWithCredentials = (email: string, password?: string) => {
-    let user = users.find(
-      (u) => u.email.toLowerCase() === email.toLowerCase(),
+    const safeUsers = users || [];
+    let user = safeUsers.find(
+      (u) => u && typeof u.email === "string" && u.email.toLowerCase() === email.toLowerCase(),
     );
     if (!user) {
       const lowerEmail = email.toLowerCase();
@@ -88,8 +90,9 @@ export function useAuth() {
       lng?: number;
     },
   ) => {
-    const existing = users.find(
-      (u) => u.email.toLowerCase() === email.toLowerCase(),
+    const safeUsers = users || [];
+    const existing = safeUsers.find(
+      (u) => u && typeof u.email === "string" && u.email.toLowerCase() === email.toLowerCase(),
     );
     if (existing) {
       throw new Error("Email already registered. Please login instead.");

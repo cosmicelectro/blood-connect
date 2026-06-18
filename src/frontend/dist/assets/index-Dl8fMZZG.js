@@ -26551,7 +26551,29 @@ const useLocalDb = create()(
       }))
     }),
     {
-      name: "blood-connect-db"
+      name: "blood-connect-db",
+      merge: (persistedState, currentState) => {
+        if (!persistedState) return currentState;
+        const merged = { ...currentState, ...persistedState };
+        merged.users = Array.isArray(merged.users) ? merged.users : currentState.users;
+        merged.donors = Array.isArray(merged.donors) ? merged.donors : currentState.donors;
+        merged.shops = Array.isArray(merged.shops) ? merged.shops : currentState.shops;
+        merged.messages = Array.isArray(merged.messages) ? merged.messages : currentState.messages;
+        merged.reports = Array.isArray(merged.reports) ? merged.reports : currentState.reports;
+        const defaultUsers = currentState.users || [];
+        for (const defUser of defaultUsers) {
+          const exists = merged.users.some(
+            (u) => u && typeof u.email === "string" && u.email.toLowerCase() === defUser.email.toLowerCase()
+          );
+          if (!exists) {
+            merged.users.push(defUser);
+          }
+        }
+        if (merged.currentUser && (!merged.currentUser.email || !merged.currentUser.role)) {
+          merged.currentUser = null;
+        }
+        return merged;
+      }
     }
   )
 );
@@ -26571,7 +26593,8 @@ function useAuth() {
   } = useLocalDb();
   const loginWithOAuth = (provider, defaultRole, email2) => {
     const userEmail = (email2 == null ? void 0 : email2.trim()) ? email2 : `oauth-${defaultRole}@${provider}.com`;
-    let user = users.find((u) => u.email === userEmail);
+    const safeUsers = users || [];
+    let user = safeUsers.find((u) => u && u.email === userEmail);
     if (!user) {
       user = registerUser(
         userEmail,
@@ -26584,8 +26607,9 @@ function useAuth() {
     return user;
   };
   const loginWithCredentials = (email2, password2) => {
-    let user = users.find(
-      (u) => u.email.toLowerCase() === email2.toLowerCase()
+    const safeUsers = users || [];
+    let user = safeUsers.find(
+      (u) => u && typeof u.email === "string" && u.email.toLowerCase() === email2.toLowerCase()
     );
     if (!user) {
       const lowerEmail = email2.toLowerCase();
@@ -26620,8 +26644,9 @@ function useAuth() {
     return user;
   };
   const registerNewProfile = (email2, name, role2, password2, locationData) => {
-    const existing = users.find(
-      (u) => u.email.toLowerCase() === email2.toLowerCase()
+    const safeUsers = users || [];
+    const existing = safeUsers.find(
+      (u) => u && typeof u.email === "string" && u.email.toLowerCase() === email2.toLowerCase()
     );
     if (existing) {
       throw new Error("Email already registered. Please login instead.");

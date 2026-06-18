@@ -458,6 +458,35 @@ export const useLocalDb = create<LocalDbState>()(
     }),
     {
       name: "blood-connect-db",
+      merge: (persistedState: any, currentState: LocalDbState) => {
+        if (!persistedState) return currentState;
+        const merged = { ...currentState, ...persistedState };
+        
+        // Ensure all state collections are arrays and fallback to initial defaults if corrupted
+        merged.users = Array.isArray(merged.users) ? merged.users : currentState.users;
+        merged.donors = Array.isArray(merged.donors) ? merged.donors : currentState.donors;
+        merged.shops = Array.isArray(merged.shops) ? merged.shops : currentState.shops;
+        merged.messages = Array.isArray(merged.messages) ? merged.messages : currentState.messages;
+        merged.reports = Array.isArray(merged.reports) ? merged.reports : currentState.reports;
+
+        // Guarantee that the default initial users are always present in the users list
+        const defaultUsers = currentState.users || [];
+        for (const defUser of defaultUsers) {
+          const exists = merged.users.some(
+            (u: any) => u && typeof u.email === "string" && u.email.toLowerCase() === defUser.email.toLowerCase()
+          );
+          if (!exists) {
+            merged.users.push(defUser);
+          }
+        }
+
+        // Validate currentUser to avoid crashes with partial/corrupted user objects
+        if (merged.currentUser && (!merged.currentUser.email || !merged.currentUser.role)) {
+          merged.currentUser = null;
+        }
+
+        return merged;
+      },
     },
   ),
 );
