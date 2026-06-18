@@ -128,11 +128,7 @@ declare module "@tanstack/react-router" {
 export default function App() {
   const { resetStore } = useLocalDb();
 
-  useEffect(() => {
-    if (process.env.NODE_ENV === "development") {
-      resetStore();
-    }
-  }, [resetStore]);
+  // We removed the resetStore on app load to avoid resetting the user's login session on every page load/hot reload.
 
   useEffect(() => {
     // Initial sync from Supabase
