@@ -439,12 +439,17 @@ export const syncFromSupabase = async () => {
       if (dbString !== lastSyncedDbString) {
         lastSyncedDbString = dbString;
         const parsed = JSON.parse(dbString);
+        
+        // Keep current login state intact so users don't get logged out during updates
+        const currentLocalUser = useLocalDb.getState().currentUser;
+
         useLocalDb.setState({
           users: parsed.users || [],
           donors: parsed.donors || [],
           shops: parsed.shops || [],
           messages: parsed.messages || [],
           reports: parsed.reports || [],
+          currentUser: currentLocalUser,
         });
       }
     }
