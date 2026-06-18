@@ -31,9 +31,11 @@ import {
   DIVISIONS,
   SUBDISTRICTS_BY_DISTRICT,
 } from "../data/locationData";
+import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "../hooks/useAuth";
 
 export function AuthPage() {
+  const navigate = useNavigate();
   const {
     loginWithOAuth,
     loginWithCredentials,
@@ -146,14 +148,16 @@ export function AuthPage() {
           `Success! Logged in as ${userObj.name} (${userObj.role})`,
         );
         setTimeout(() => {
-          window.location.href =
-            userObj.role === "admin"
-              ? "/admin"
-              : userObj.role === "donor"
+          navigate({
+            to:
+              userObj.role === "admin"
+                ? "/admin"
+                : userObj.role === "donor"
                 ? "/donor"
                 : userObj.role === "shopkeeper"
-                  ? "/shopkeeper"
-                  : "/";
+                ? "/shopkeeper"
+                : "/",
+          });
         }, 800);
       }
     } catch (err: any) {

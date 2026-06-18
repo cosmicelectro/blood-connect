@@ -126,13 +126,14 @@ declare module "@tanstack/react-router" {
 }
 
 export default function App() {
-  const { resetStore } = useLocalDb();
+  // const { resetStore } = useLocalDb();
 
-  useEffect(() => {
-    if (process.env.NODE_ENV === "development") {
-      resetStore();
-    }
-  }, [resetStore]);
+  // // Reset store only when explicitly needed (e.g., via a dev query param)
+  // // useEffect(() => {
+  // //   if (process.env.NODE_ENV === "development") {
+  // //     resetStore();
+  // //   }
+  // // }, [resetStore]);
 
   return <RouterProvider router={router} />;
 }
