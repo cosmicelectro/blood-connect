@@ -20,10 +20,11 @@ export function useAuth() {
     defaultRole: "donor" | "shopkeeper" | "viewer",
     email?: string,
   ) => {
+    // Use provided email if given, otherwise generate a simulated one
     const userEmail = email?.trim()
-      ? email.toLowerCase()
-      : `oauth-${defaultRole}@${provider}.com`.toLowerCase();
-    let user = users.find((u) => u.email.toLowerCase() === userEmail);
+      ? email
+      : `oauth-${defaultRole}@${provider}.com`;
+    let user = users.find((u) => u.email === userEmail);
     if (!user) {
       user = registerUser(
         userEmail,
@@ -31,12 +32,6 @@ export function useAuth() {
         defaultRole,
         "oauth-pass",
       );
-    }
-    // Set user as verified upon OAuth registration/login
-    if (user && !user.isVerified) {
-      verifyUser(user.id);
-      // refetch user state
-      user = { ...user, isVerified: true };
     }
     setCurrentUser(user);
     return user;

@@ -9,7 +9,7 @@ import {
 import { useEffect } from "react";
 import { Layout } from "./components/Layout";
 import { useAuth } from "./hooks/useAuth";
-import { useLocalDb, syncFromSupabase } from "./hooks/useLocalDb";
+import { useLocalDb } from "./hooks/useLocalDb";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { AuthPage } from "./pages/AuthPage";
 import { ChatPage } from "./pages/ChatPage";
@@ -128,19 +128,11 @@ declare module "@tanstack/react-router" {
 export default function App() {
   const { resetStore } = useLocalDb();
 
-  // We removed the resetStore on app load to avoid resetting the user's login session on every page load/hot reload.
-
   useEffect(() => {
-    // Initial sync from Supabase
-    syncFromSupabase();
-
-    // Poll Supabase every 5 seconds for updates
-    const interval = setInterval(() => {
-      syncFromSupabase();
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, []);
+    if (process.env.NODE_ENV === "development") {
+      resetStore();
+    }
+  }, [resetStore]);
 
   return <RouterProvider router={router} />;
 }

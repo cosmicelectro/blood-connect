@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { supabase } from "../lib/supabase";
 
 export interface Product {
   name: string;
@@ -151,18 +150,7 @@ export const useLocalDb = create<LocalDbState>()(
           document.documentElement.classList.remove("dark");
         }
       },
-      setCurrentUser: (user) => {
-        set({ currentUser: user });
-        // Trigger immediate sync to Supabase so that other components or subsequent ticks don't overwrite it
-        const state = get();
-        syncToSupabase({
-          users: state.users,
-          donors: state.donors,
-          shops: state.shops,
-          messages: state.messages,
-          reports: state.reports,
-        });
-      },
+      setCurrentUser: (user) => set({ currentUser: user }),
       resetStore: () =>
         set({
           users: [],
@@ -186,22 +174,9 @@ export const useLocalDb = create<LocalDbState>()(
           name,
           role,
           password: password || "password123",
-          isVerified: true, // Auto-verify users upon registration to bypass code input alert
+          isVerified: false,
         };
-        set((state) => {
-          const updatedUsers = [...state.users, newUser];
-          
-          // Trigger immediate sync to Supabase so registration state is persistent
-          syncToSupabase({
-            users: updatedUsers,
-            donors: state.donors,
-            shops: state.shops,
-            messages: state.messages,
-            reports: state.reports,
-          });
-
-          return { users: updatedUsers };
-        });
+        set((state) => ({ users: [...state.users, newUser] }));
         return newUser;
       },
       verifyUser: (userId) =>
@@ -422,94 +397,3 @@ export const useLocalDb = create<LocalDbState>()(
     },
   ),
 );
-
-let isSyncingToSupabase = false;
-let isSyncingFromSupabase = false;
-let lastSyncedDbString = "";
-
-export const syncToSupabase = async (dbPayload: any) => {
-  if (isSyncingToSupabase) return;
-  isSyncingToSupabase = true;
-  try {
-    const dbString = JSON.stringify(dbPayload);
-    lastSyncedDbString = dbString;
-
-    await supabase
-      .from("shops")
-      .update({
-        description: dbString,
-      })
-      .eq("name", "global-state");
-  } catch (error) {
-    console.error("Failed to sync to Supabase:", error);
-  } finally {
-    isSyncingToSupabase = false;
-  }
-};
-
-export const syncFromSupabase = async () => {
-  if (isSyncingFromSupabase || isSyncingToSupabase) return;
-  isSyncingFromSupabase = true;
-  try {
-    const { data, error } = await supabase
-      .from("shops")
-      .select("description")
-      .eq("name", "global-state")
-      .maybeSingle();
-
-    if (error) throw error;
-    if (data && data.description) {
-      const dbString = data.description;
-      if (dbString !== lastSyncedDbString) {
-        lastSyncedDbString = dbString;
-        const parsed = JSON.parse(dbString);
-        
-        // Keep current login state intact so users don't get logged out during updates
-        const currentLocalUser = useLocalDb.getState().currentUser;
-
-        // If local user is verified, make sure they are verified in the incoming users list too
-        let incomingUsers = parsed.users || [];
-        if (currentLocalUser) {
-          incomingUsers = incomingUsers.map((u: any) =>
-            u.id === currentLocalUser.id || u.email.toLowerCase() === currentLocalUser.email.toLowerCase()
-              ? { ...u, isVerified: currentLocalUser.isVerified || u.isVerified }
-              : u
-          );
-        }
-
-        useLocalDb.setState({
-          users: incomingUsers,
-          donors: parsed.donors || [],
-          shops: parsed.shops || [],
-          messages: parsed.messages || [],
-          reports: parsed.reports || [],
-          currentUser: currentLocalUser,
-        });
-      }
-    }
-  } catch (error) {
-    console.error("Failed to sync from Supabase:", error);
-  } finally {
-    isSyncingFromSupabase = false;
-  }
-};
-
-// Subscribe to store changes to trigger updates to Supabase
-useLocalDb.subscribe((state) => {
-  const dbPayload = {
-    users: state.users,
-    donors: state.donors,
-    shops: state.shops,
-    messages: state.messages,
-    reports: state.reports,
-  };
-  const dbString = JSON.stringify(dbPayload);
-
-  if (
-    dbString !== lastSyncedDbString &&
-    !isSyncingFromSupabase &&
-    !isSyncingToSupabase
-  ) {
-    syncToSupabase(dbPayload);
-  }
-});
