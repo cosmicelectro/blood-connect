@@ -186,7 +186,7 @@ export const useLocalDb = create<LocalDbState>()(
           name,
           role,
           password: password || "password123",
-          isVerified: false,
+          isVerified: true, // Auto-verify users upon registration to bypass code input alert
         };
         set((state) => ({ users: [...state.users, newUser] }));
         return newUser;

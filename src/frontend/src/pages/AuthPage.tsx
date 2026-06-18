@@ -129,17 +129,21 @@ export function AuthPage() {
           },
         );
 
-        // Generate a random 6-digit code
-        const code = Math.floor(100000 + Math.random() * 900000).toString();
-        setGeneratedCode(code);
-        setVerificationUser(userObj);
-
-        // Simulate sending email by popping an alert box
-        alert(
-          `SIMULATED EMAIL\n\nTo: ${email}\nSubject: BloodConnect Verification Code\n\nHello ${userObj.name},\n\nYour 6-digit verification code is: ${code}\n\nPlease enter this code to verify your account.`,
+        // Login automatically on success
+        const loggedUser = loginWithCredentials(email, password);
+        toast.success(
+          `Success! Registered and logged in as ${loggedUser.name} (${loggedUser.role})`,
         );
-
-        toast.info("A verification code has been sent to your email.");
+        setTimeout(() => {
+          window.location.href =
+            loggedUser.role === "admin"
+              ? "/admin"
+              : loggedUser.role === "donor"
+                ? "/donor"
+                : loggedUser.role === "shopkeeper"
+                  ? "/shopkeeper"
+                  : "/";
+        }, 800);
       } else {
         const userObj = loginWithCredentials(email, password);
         toast.success(
