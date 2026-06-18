@@ -46,15 +46,19 @@ export function useAuth() {
       if (lowerEmail === "admin@bloodconnect.org") {
         user = registerUser("admin@bloodconnect.org", "System Admin", "admin", password || "password");
         verifyUser(user.id);
+        user.isVerified = true;
       } else if (lowerEmail === "donor@bloodconnect.org") {
         user = registerUser("donor@bloodconnect.org", "John Donor", "donor", password || "password");
         verifyUser(user.id);
+        user.isVerified = true;
       } else if (lowerEmail === "shopkeeper@bloodconnect.org") {
         user = registerUser("shopkeeper@bloodconnect.org", "Abir Shopkeeper", "shopkeeper", password || "password");
         verifyUser(user.id);
+        user.isVerified = true;
       } else if (lowerEmail === "viewer@bloodconnect.org") {
         user = registerUser("viewer@bloodconnect.org", "Tanvir Seeker", "viewer", password || "password");
         verifyUser(user.id);
+        user.isVerified = true;
       }
     }
     if (!user) {
