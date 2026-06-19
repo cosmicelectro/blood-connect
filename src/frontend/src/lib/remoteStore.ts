@@ -9,6 +9,11 @@ export type SharedStateSnapshot = Pick<
   "users" | "donors" | "shops" | "messages" | "reports"
 >;
 
+export interface SharedStateRecord {
+  snapshot: SharedStateSnapshot;
+  updatedAt: string | null;
+}
+
 export function toSharedSnapshot(state: LocalDbState): SharedStateSnapshot {
   return {
     users: state.users,
@@ -19,12 +24,12 @@ export function toSharedSnapshot(state: LocalDbState): SharedStateSnapshot {
   };
 }
 
-export async function loadSharedState(): Promise<SharedStateSnapshot | null> {
+export async function loadSharedState(): Promise<SharedStateRecord | null> {
   if (!supabase) return null;
 
   const { data, error } = await supabase
     .from(SHARED_STATE_TABLE)
-    .select("data")
+    .select("data, updated_at")
     .eq("id", SHARED_STATE_ID)
     .maybeSingle();
 
@@ -33,7 +38,13 @@ export async function loadSharedState(): Promise<SharedStateSnapshot | null> {
     return null;
   }
 
-  return (data?.data as SharedStateSnapshot | undefined) || null;
+  const snapshot = data?.data as SharedStateSnapshot | undefined;
+  if (!snapshot) return null;
+
+  return {
+    snapshot,
+    updatedAt: data?.updated_at || null,
+  };
 }
 
 export async function saveSharedState(snapshot: SharedStateSnapshot) {

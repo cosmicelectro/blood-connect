@@ -154,12 +154,21 @@ export default function App() {
   useEffect(() => {
     let cancelled = false;
     let saveTimer: ReturnType<typeof setTimeout> | null = null;
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
     let hydrating = true;
+    let lastRemoteUpdatedAt: string | null = null;
+    let lastLocalSaveAt = 0;
 
     loadSharedState()
-      .then((snapshot) => {
-        if (!cancelled && snapshot) {
-          useLocalDb.getState().replaceSharedState(snapshot);
+      .then((record) => {
+        if (cancelled) return;
+
+        if (record) {
+          lastRemoteUpdatedAt = record.updatedAt;
+          useLocalDb.getState().replaceSharedState(record.snapshot);
+        } else {
+          lastLocalSaveAt = Date.now();
+          saveSharedState(toSharedSnapshot(useLocalDb.getState()));
         }
       })
       .finally(() => {
@@ -168,16 +177,31 @@ export default function App() {
 
     const unsubscribe = useLocalDb.subscribe((state) => {
       if (hydrating) return;
+      if (Date.now() - lastLocalSaveAt < 1200) return;
       if (saveTimer) clearTimeout(saveTimer);
 
       saveTimer = setTimeout(() => {
+        lastLocalSaveAt = Date.now();
         saveSharedState(toSharedSnapshot(state));
       }, 400);
     });
 
+    pollTimer = setInterval(() => {
+      loadSharedState().then((record) => {
+        if (!record || cancelled) return;
+        if (record.updatedAt && record.updatedAt !== lastRemoteUpdatedAt) {
+          lastRemoteUpdatedAt = record.updatedAt;
+          hydrating = true;
+          useLocalDb.getState().replaceSharedState(record.snapshot);
+          hydrating = false;
+        }
+      });
+    }, 5000);
+
     return () => {
       cancelled = true;
       if (saveTimer) clearTimeout(saveTimer);
+      if (pollTimer) clearInterval(pollTimer);
       unsubscribe();
     };
   }, []);
