@@ -210,7 +210,11 @@ export function AdminDashboard() {
                 {isBn ? "রক্তদাতা পরিচালনা" : "Manage Donors"}
               </h2>
               <Input
-                placeholder={isBn ? "নাম, রক্তের গ্রুপ, ঠিকানা দিয়ে খুঁজুন..." : "Search by name, type, location..."}
+                placeholder={
+                  isBn
+                    ? "নাম, রক্তের গ্রুপ, ঠিকানা দিয়ে খুঁজুন..."
+                    : "Search by name, type, location..."
+                }
                 className="max-w-xs"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -222,10 +226,14 @@ export function AdminDashboard() {
                 <thead>
                   <tr className="border-b border-border text-muted-foreground font-semibold">
                     <th className="py-2">{isBn ? "নাম" : "Name"}</th>
-                    <th className="py-2 text-center">{isBn ? "রক্তের গ্রুপ" : "Type"}</th>
+                    <th className="py-2 text-center">
+                      {isBn ? "রক্তের গ্রুপ" : "Type"}
+                    </th>
                     <th className="py-2">{isBn ? "যোগাযোগ" : "Contact"}</th>
                     <th className="py-2">{isBn ? "অবস্থা" : "Status"}</th>
-                    <th className="py-2 text-right">{isBn ? "অ্যাকশন" : "Actions"}</th>
+                    <th className="py-2 text-right">
+                      {isBn ? "অ্যাকশন" : "Actions"}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -286,7 +294,7 @@ export function AdminDashboard() {
                           <Trash2 className="h-4 w-4 inline" />
                         </button>
                       </td>
-                      </tr>
+                    </tr>
                   ))}
                   {filteredDonors.length === 0 && (
                     <tr>
@@ -294,7 +302,9 @@ export function AdminDashboard() {
                         colSpan={5}
                         className="text-center py-6 text-muted-foreground"
                       >
-                        {isBn ? "কোনো রক্তদাতা পাওয়া যায়নি।" : "No donors found matching criteria."}
+                        {isBn
+                          ? "কোনো রক্তদাতা পাওয়া যায়নি।"
+                          : "No donors found matching criteria."}
                       </td>
                     </tr>
                   )}
@@ -325,7 +335,9 @@ export function AdminDashboard() {
                     </p>
                     {shop.products.length > 0 && (
                       <div className="mt-2 text-xs">
-                        <span className="font-semibold">{isBn ? "পণ্যসমূহ: " : "Products: "}</span>
+                        <span className="font-semibold">
+                          {isBn ? "পণ্যসমূহ: " : "Products: "}
+                        </span>
                         {shop.products
                           .slice(0, 3)
                           .map((p) => p.name)
@@ -340,14 +352,16 @@ export function AdminDashboard() {
                       size="sm"
                       onClick={() => setEditingShop(shop)}
                     >
-                      <Edit className="h-3.5 w-3.5 mr-1" /> {isBn ? "সম্পাদনা" : "Edit"}
+                      <Edit className="h-3.5 w-3.5 mr-1" />{" "}
+                      {isBn ? "সম্পাদনা" : "Edit"}
                     </Button>
                     <Button
                       variant="destructive"
                       size="sm"
                       onClick={() => handleDeleteShop(shop.id)}
                     >
-                      <Trash2 className="h-3.5 w-3.5 mr-1" /> {isBn ? "মুছুন" : "Delete"}
+                      <Trash2 className="h-3.5 w-3.5 mr-1" />{" "}
+                      {isBn ? "মুছুন" : "Delete"}
                     </Button>
                   </div>
                 </div>
@@ -366,10 +380,16 @@ export function AdminDashboard() {
             </h2>
             <form onSubmit={handleAddShopSubmit} className="space-y-3">
               <div className="space-y-1">
-                <Label htmlFor="s-name">{isBn ? "দোকানের নাম" : "Shop Name"}</Label>
+                <Label htmlFor="s-name">
+                  {isBn ? "দোকানের নাম" : "Shop Name"}
+                </Label>
                 <Input
                   id="s-name"
-                  placeholder={isBn ? "মেডিকেল সাপ্লাই স্টোরের নাম" : "Medical Supply Store Name"}
+                  placeholder={
+                    isBn
+                      ? "মেডিকেল সাপ্লাই স্টোরের নাম"
+                      : "Medical Supply Store Name"
+                  }
                   required
                   value={newShopForm.name}
                   onChange={(e) =>
@@ -381,7 +401,11 @@ export function AdminDashboard() {
                 <Label htmlFor="s-desc">{isBn ? "বিবরণ" : "Description"}</Label>
                 <Textarea
                   id="s-desc"
-                  placeholder={isBn ? "বিক্রিত পণ্য, বিশেষ অফার, বিস্তারিত..." : "Items sold, special offers, details..."}
+                  placeholder={
+                    isBn
+                      ? "বিক্রিত পণ্য, বিশেষ অফার, বিস্তারিত..."
+                      : "Items sold, special offers, details..."
+                  }
                   required
                   rows={2}
                   value={newShopForm.description}
@@ -419,7 +443,9 @@ export function AdminDashboard() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="s-web">{isBn ? "ওয়েবসাইট (ঐচ্ছিক)" : "Website (opt)"}</Label>
+                  <Label htmlFor="s-web">
+                    {isBn ? "ওয়েবসাইট (ঐচ্ছিক)" : "Website (opt)"}
+                  </Label>
                   <Input
                     id="s-web"
                     placeholder="URL"
@@ -446,7 +472,7 @@ export function AdminDashboard() {
               {isBn ? "ব্যবহারকারী রিপোর্ট" : "User Reports"}
             </h2>
             <div className="space-y-3">
-               {reports.length === 0 ? (
+              {reports.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   {isBn ? "কোনো পেন্ডিং রিপোর্ট নেই।" : "No pending reports."}
                 </p>

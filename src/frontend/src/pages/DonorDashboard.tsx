@@ -349,7 +349,6 @@ function EditProfilePanel({
 }
 
 export function DonorDashboard() {
-  const { language } = useAuth();
   const { t } = useTranslation();
 
   const { data: profile, isLoading, error, refetch } = useMyProfile();
@@ -417,12 +416,6 @@ export function DonorDashboard() {
     if (!profile) return;
     if (!replyText.trim() || !selectedThreadSenderId) return;
 
-    // Find the sender's name from messages list
-    const firstMsg = (messages || []).find(
-      (m) => m.senderId === selectedThreadSenderId,
-    );
-    const senderName = firstMsg ? firstMsg.senderName : "User Seeker";
-
     await sendMessage.mutateAsync({
       senderId: profile.id,
       senderName: profile.name,
@@ -434,7 +427,7 @@ export function DonorDashboard() {
 
   // Group messages by sender id
   const chatThreadsMap = new Map();
-  (messages || []).forEach((m) => {
+  for (const m of messages || []) {
     const threadPartnerId =
       m.senderId === profile?.id ? m.receiverId : m.senderId;
     if (!chatThreadsMap.has(threadPartnerId)) {
@@ -444,7 +437,7 @@ export function DonorDashboard() {
       });
     }
     chatThreadsMap.get(threadPartnerId).messages.push(m);
-  });
+  }
 
   const chatThreads = Array.from(chatThreadsMap.entries());
 
@@ -734,6 +727,7 @@ export function DonorDashboard() {
                         className={`flex items-center justify-between w-full p-2 rounded text-xs font-semibold truncate ${selectedThreadSenderId === partnerId ? "bg-primary/10 text-primary" : "hover:bg-muted text-foreground"}`}
                       >
                         <button
+                          type="button"
                           onClick={() => setSelectedThreadSenderId(partnerId)}
                           className="flex-1 flex items-center text-left"
                         >
@@ -832,6 +826,7 @@ export function DonorDashboard() {
                                 )}
                                 {isMe && (
                                   <button
+                                    type="button"
                                     onClick={() => {
                                       setEditingMessageId(msg.id);
                                       setEditingText(msg.text);

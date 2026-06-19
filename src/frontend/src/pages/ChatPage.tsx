@@ -2,8 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MessageSquare, Send, Trash2, User as UserIcon } from "lucide-react";
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
 import { useAuth } from "../hooks/useAuth";
 import {
   useDeleteInbox,
@@ -15,7 +13,6 @@ import {
 
 export function ChatPage() {
   const { user, isLoggedIn } = useAuth();
-  const { t } = useTranslation();
   const { data: users = [] } = useUsers();
   const { data: messages = [] } = useMessages(user?.id || "");
   const sendMessage = useSendMessage();
@@ -112,6 +109,7 @@ export function ChatPage() {
                 return (
                   <button
                     key={u.id}
+                    type="button"
                     onClick={() => setActiveChatUserId(u.id)}
                     className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-colors ${
                       isActive ? "bg-primary/10 text-primary" : "hover:bg-muted"
@@ -236,6 +234,7 @@ export function ChatPage() {
                               </span>
                               {isMe && (
                                 <button
+                                  type="button"
                                   onClick={() => startEdit(msg.id, msg.text)}
                                   className="text-[10px] text-muted-foreground hover:text-primary transition-colors opacity-0 group-hover:opacity-100"
                                 >

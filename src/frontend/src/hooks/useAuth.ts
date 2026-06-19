@@ -41,24 +41,47 @@ export function useAuth() {
   const loginWithCredentials = (email: string, password?: string) => {
     const safeUsers = users || [];
     let user = safeUsers.find(
-      (u) => u && typeof u.email === "string" && u.email.toLowerCase() === email.toLowerCase(),
+      (u) =>
+        u &&
+        typeof u.email === "string" &&
+        u.email.toLowerCase() === email.toLowerCase(),
     );
     if (!user) {
       const lowerEmail = email.toLowerCase();
       if (lowerEmail === "admin@bloodconnect.org") {
-        user = registerUser("admin@bloodconnect.org", "System Admin", "admin", password || "password");
+        user = registerUser(
+          "admin@bloodconnect.org",
+          "System Admin",
+          "admin",
+          password || "password",
+        );
         verifyUser(user.id);
         user.isVerified = true;
       } else if (lowerEmail === "donor@bloodconnect.org") {
-        user = registerUser("donor@bloodconnect.org", "John Donor", "donor", password || "password");
+        user = registerUser(
+          "donor@bloodconnect.org",
+          "John Donor",
+          "donor",
+          password || "password",
+        );
         verifyUser(user.id);
         user.isVerified = true;
       } else if (lowerEmail === "shopkeeper@bloodconnect.org") {
-        user = registerUser("shopkeeper@bloodconnect.org", "Abir Shopkeeper", "shopkeeper", password || "password");
+        user = registerUser(
+          "shopkeeper@bloodconnect.org",
+          "Abir Shopkeeper",
+          "shopkeeper",
+          password || "password",
+        );
         verifyUser(user.id);
         user.isVerified = true;
       } else if (lowerEmail === "viewer@bloodconnect.org") {
-        user = registerUser("viewer@bloodconnect.org", "Tanvir Seeker", "viewer", password || "password");
+        user = registerUser(
+          "viewer@bloodconnect.org",
+          "Tanvir Seeker",
+          "viewer",
+          password || "password",
+        );
         verifyUser(user.id);
         user.isVerified = true;
       }
@@ -70,7 +93,7 @@ export function useAuth() {
       throw new Error("Incorrect password. Please try again.");
     }
     if (user.isVerified === false) {
-      throw new Error("unverified:" + user.id);
+      throw new Error(`unverified:${user.id}`);
     }
     setCurrentUser(user);
     return user;
@@ -92,7 +115,10 @@ export function useAuth() {
   ) => {
     const safeUsers = users || [];
     const existing = safeUsers.find(
-      (u) => u && typeof u.email === "string" && u.email.toLowerCase() === email.toLowerCase(),
+      (u) =>
+        u &&
+        typeof u.email === "string" &&
+        u.email.toLowerCase() === email.toLowerCase(),
     );
     if (existing) {
       throw new Error("Email already registered. Please login instead.");

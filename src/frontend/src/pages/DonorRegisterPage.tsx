@@ -179,7 +179,7 @@ export function DonorRegisterPage() {
         lng: existingProfile.lng,
       });
     }
-  }, [existingProfile]);
+  }, []);
 
   const set = (key: string, value: string | number) =>
     setForm((f) => ({ ...f, [key]: value }));

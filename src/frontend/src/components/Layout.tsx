@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Droplets,
   Heart,
@@ -41,7 +41,6 @@ export function Layout({ children }: LayoutProps) {
   } = useAuth();
 
   const routerState = useRouterState();
-  const navigate = useNavigate();
   const currentPath = routerState.location.pathname;
   const { t, i18n } = useTranslation();
 
@@ -164,6 +163,7 @@ export function Layout({ children }: LayoutProps) {
 
             {/* Theme Toggle */}
             <button
+              type="button"
               onClick={() => setTheme(theme === "light" ? "dark" : "light")}
               className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
               aria-label="Toggle Theme"
@@ -181,7 +181,10 @@ export function Layout({ children }: LayoutProps) {
                 <div
                   className={`flex items-center gap-1.5 rounded-full px-2 lg:px-3 py-1 text-xs font-semibold uppercase tracking-wider ${getRoleBadgeColor()}`}
                 >
-                  <RoleIcon role={role as any} className="h-3.5 w-3.5 hidden lg:block" />
+                  <RoleIcon
+                    role={role as any}
+                    className="h-3.5 w-3.5 hidden lg:block"
+                  />
                   {role}
                 </div>
                 <div className="text-sm font-semibold max-w-[120px] truncate hidden xl:block">
@@ -214,8 +217,10 @@ export function Layout({ children }: LayoutProps) {
           {/* Mobile hamburger */}
           <div className="flex items-center gap-2 md:hidden">
             <button
+              type="button"
               onClick={() => setTheme(theme === "light" ? "dark" : "light")}
               className="p-2 rounded text-muted-foreground"
+              aria-label="Toggle Theme"
             >
               {theme === "light" ? (
                 <Moon className="h-4 w-4" />

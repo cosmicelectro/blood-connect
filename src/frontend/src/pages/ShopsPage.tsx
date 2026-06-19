@@ -81,7 +81,7 @@ function ShopCard({
             <div className="space-y-1.5 max-h-[140px] overflow-y-auto scrollbar-thin">
               {shop.products.map((p: any, idx: number) => (
                 <div
-                  key={p.name + "-" + idx}
+                  key={`${p.name}-${idx}`}
                   className="flex justify-between items-center text-xs border-b border-border/30 pb-1 last:border-0 last:pb-0"
                 >
                   <span className="font-medium truncate max-w-[170px]">
@@ -184,14 +184,20 @@ function AddShopDialog({
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent data-ocid="add_shop.dialog">
         <DialogHeader>
-          <DialogTitle>{isBn ? "মেডিকেল শপ যুক্ত করুন" : "Add Medical Shop"}</DialogTitle>
+          <DialogTitle>
+            {isBn ? "মেডিকেল শপ যুক্ত করুন" : "Add Medical Shop"}
+          </DialogTitle>
           <DialogDescription>
-            {isBn ? "একটি মেডিকেল সরঞ্জাম বা সরবরাহকারী দোকান তালিকাভুক্ত করুন।" : "List a medical equipment or supplies shop."}
+            {isBn
+              ? "একটি মেডিকেল সরঞ্জাম বা সরবরাহকারী দোকান তালিকাভুক্ত করুন।"
+              : "List a medical equipment or supplies shop."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="shop-name">{isBn ? "দোকানের নাম *" : "Shop Name *"}</Label>
+            <Label htmlFor="shop-name">
+              {isBn ? "দোকানের নাম *" : "Shop Name *"}
+            </Label>
             <Input
               id="shop-name"
               required
@@ -201,27 +207,39 @@ function AddShopDialog({
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="shop-description">{isBn ? "বিবরণ *" : "Description *"}</Label>
+            <Label htmlFor="shop-description">
+              {isBn ? "বিবরণ *" : "Description *"}
+            </Label>
             <Textarea
               id="shop-description"
               required
-              placeholder={isBn ? "চিকিৎসা সরঞ্জাম, রক্তের ব্যাগ..." : "Medical equipment, blood bags…"}
+              placeholder={
+                isBn
+                  ? "চিকিৎসা সরঞ্জাম, রক্তের ব্যাগ..."
+                  : "Medical equipment, blood bags…"
+              }
               {...field("description")}
               data-ocid="add_shop.description_input"
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="shop-address">{isBn ? "ঠিকানা *" : "Address *"}</Label>
+            <Label htmlFor="shop-address">
+              {isBn ? "ঠিকানা *" : "Address *"}
+            </Label>
             <Input
               id="shop-address"
               required
-              placeholder={isBn ? "১২৩ হেলথ স্ট্রিট, শহর" : "123 Health Street, City"}
+              placeholder={
+                isBn ? "১২৩ হেলথ স্ট্রিট, শহর" : "123 Health Street, City"
+              }
               {...field("address")}
               data-ocid="add_shop.address_input"
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="shop-phone">{isBn ? "ফোন নম্বর *" : "Phone *"}</Label>
+            <Label htmlFor="shop-phone">
+              {isBn ? "ফোন নম্বর *" : "Phone *"}
+            </Label>
             <Input
               id="shop-phone"
               required
@@ -232,7 +250,9 @@ function AddShopDialog({
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="shop-website">{isBn ? "ওয়েবসাইট (ঐচ্ছিক)" : "Website (optional)"}</Label>
+            <Label htmlFor="shop-website">
+              {isBn ? "ওয়েবসাইট (ঐচ্ছিক)" : "Website (optional)"}
+            </Label>
             <Input
               id="shop-website"
               type="url"
@@ -255,7 +275,13 @@ function AddShopDialog({
               disabled={addShop.isPending}
               data-ocid="add_shop.submit_button"
             >
-              {addShop.isPending ? (isBn ? "যুক্ত করা হচ্ছে..." : "Adding…") : (isBn ? "দোকান যুক্ত করুন" : "Add Shop")}
+              {addShop.isPending
+                ? isBn
+                  ? "যুক্ত করা হচ্ছে..."
+                  : "Adding…"
+                : isBn
+                  ? "দোকান যুক্ত করুন"
+                  : "Add Shop"}
             </Button>
           </div>
         </form>

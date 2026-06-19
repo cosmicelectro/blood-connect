@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useNavigate } from "@tanstack/react-router";
 import {
   ArrowRight,
   Droplets,
@@ -31,7 +32,6 @@ import {
   DIVISIONS,
   SUBDISTRICTS_BY_DISTRICT,
 } from "../data/locationData";
-import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "../hooks/useAuth";
 
 export function AuthPage() {
@@ -64,15 +64,15 @@ export function AuthPage() {
   const [division, setDivision] = useState("");
   const [district, setDistrict] = useState("");
   const [subDistrict, setSubDistrict] = useState("");
-  const [area, setArea] = useState("");
+  const [area, _setArea] = useState("");
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
-  const [detectingLocation, setDetectingLocation] = useState(false);
+  const [_detectingLocation, setDetectingLocation] = useState(false);
   // Verification flow state
   const [verificationUser, setVerificationUser] = useState(null as any);
   const [verificationCode, setVerificationCode] = useState("");
 
-  const detectLocation = () => {
+  const _detectLocation = () => {
     if (!navigator.geolocation) {
       toast.error("Geolocation not supported.");
       return;
@@ -92,7 +92,7 @@ export function AuthPage() {
       { timeout: 10000 },
     );
   };
-  const [generatedCode, setGeneratedCode] = useState("");
+  const [generatedCode, _setGeneratedCode] = useState("");
 
   const handleOAuthClick = (provider: "google" | "facebook") => {
     // Open OAuth entry popup for the selected provider
@@ -138,10 +138,10 @@ export function AuthPage() {
               userObj.role === "admin"
                 ? "/admin"
                 : userObj.role === "donor"
-                ? "/donor"
-                : userObj.role === "shopkeeper"
-                ? "/shopkeeper"
-                : "/",
+                  ? "/donor"
+                  : userObj.role === "shopkeeper"
+                    ? "/shopkeeper"
+                    : "/",
           });
         }, 800);
       } else {
@@ -155,10 +155,10 @@ export function AuthPage() {
               userObj.role === "admin"
                 ? "/admin"
                 : userObj.role === "donor"
-                ? "/donor"
-                : userObj.role === "shopkeeper"
-                ? "/shopkeeper"
-                : "/",
+                  ? "/donor"
+                  : userObj.role === "shopkeeper"
+                    ? "/shopkeeper"
+                    : "/",
           });
         }, 800);
       }
@@ -193,6 +193,7 @@ export function AuthPage() {
           {/* Separate Registration vs Login Flow */}
           <div className="flex bg-muted p-1 rounded-lg mb-6">
             <button
+              type="button"
               onClick={() => setIsSignUp(false)}
               className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
                 !isSignUp
@@ -203,6 +204,7 @@ export function AuthPage() {
               {t("login")}
             </button>
             <button
+              type="button"
               onClick={() => setIsSignUp(true)}
               className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
                 isSignUp
@@ -252,7 +254,7 @@ export function AuthPage() {
                       onClick={() => setRole(item.type as any)}
                       className={`flex flex-col items-center justify-center rounded-xl border p-2 text-center transition-all gap-1.5 ${
                         isSelected
-                          ? item.activeBg + " border-2 shadow-sm"
+                          ? `${item.activeBg} border-2 shadow-sm`
                           : "border-border bg-card text-muted-foreground hover:bg-muted"
                       }`}
                     >
@@ -438,6 +440,7 @@ export function AuthPage() {
           {/* OAuth Buttons */}
           <div className="space-y-2">
             <button
+              type="button"
               onClick={() => handleOAuthClick("google")}
               className="flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-card py-2 text-sm font-semibold text-foreground hover:bg-muted transition-all"
             >
@@ -445,6 +448,7 @@ export function AuthPage() {
               {t("oauthGoogle")}
             </button>
             <button
+              type="button"
               onClick={() => handleOAuthClick("facebook")}
               className="flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-card py-2 text-sm font-semibold text-foreground hover:bg-muted transition-all"
             >

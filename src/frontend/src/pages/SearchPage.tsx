@@ -33,7 +33,6 @@ import { useAuth } from "../hooks/useAuth";
 import {
   useAllDonors,
   useCheckAvailability,
-  useLogDonation,
   useSearchDonors,
 } from "../hooks/useBackend";
 
@@ -67,15 +66,15 @@ export function SearchPage() {
   } | null>(null);
 
   const checkAvailability = useCheckAvailability();
-  const logDonation = useLogDonation();
+  const mutateAvailability = checkAvailability.mutate;
 
   useEffect(() => {
-    checkAvailability.mutate();
+    mutateAvailability();
     const timer = setInterval(() => {
-      checkAvailability.mutate();
+      mutateAvailability();
     }, 3600000);
     return () => clearInterval(timer);
-  }, []);
+  }, [mutateAvailability]);
 
   const hasLocation = locationState.status === "granted";
 
@@ -99,7 +98,6 @@ export function SearchPage() {
     data: allDonors,
     isLoading: allLoading,
     error: allError,
-    refetch: refetchAll,
   } = useAllDonors();
 
   const isLoading = searchTriggered && hasLocation ? searchLoading : allLoading;
@@ -202,6 +200,7 @@ export function SearchPage() {
       <div className="mx-auto max-w-6xl px-4 mt-6">
         <div className="flex border-b border-border">
           <button
+            type="button"
             onClick={() => setActiveTab("search")}
             className={`px-4 py-2.5 text-sm font-semibold flex items-center gap-2 border-b-2 transition-all ${
               activeTab === "search"
@@ -213,6 +212,7 @@ export function SearchPage() {
             {t("searchTab")}
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab("leaderboard")}
             className={`px-4 py-2.5 text-sm font-semibold flex items-center gap-2 border-b-2 transition-all ${
               activeTab === "leaderboard"
@@ -265,14 +265,18 @@ export function SearchPage() {
                   />
                   <input
                     type="text"
-                    placeholder={language === "bn" ? "উপজেলা" : "Sub-district / Upazila"}
+                    placeholder={
+                      language === "bn" ? "উপজেলা" : "Sub-district / Upazila"
+                    }
                     className="w-full border border-border bg-card p-2 rounded-md text-sm outline-none"
                     value={subDistrict}
                     onChange={(e) => setSubDistrict(e.target.value)}
                   />
                   <input
                     type="text"
-                    placeholder={language === "bn" ? "এলাকা / ওয়ার্ড" : "Area / Ward"}
+                    placeholder={
+                      language === "bn" ? "এলাকা / ওয়ার্ড" : "Area / Ward"
+                    }
                     className="w-full border border-border bg-card p-2 rounded-md text-sm outline-none"
                     value={area}
                     onChange={(e) => setArea(e.target.value)}

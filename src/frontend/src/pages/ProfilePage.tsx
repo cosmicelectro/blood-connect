@@ -4,13 +4,11 @@ import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Lock } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useAuth } from "../hooks/useAuth";
 
 export function ProfilePage() {
   const { currentUser, updatePassword, logout } = useAuth();
-  const { t } = useTranslation();
   const [showPwd, setShowPwd] = useState(false);
 
   const [oldPwd, setOldPwd] = useState("");

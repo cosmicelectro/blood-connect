@@ -182,6 +182,7 @@ module {
   };
 
   public func getAllDonors(donors : List.List<Types.DonorProfile>) : [Types.DonorPublicView] {
+    refreshAvailability(donors);
     let views = donors.map<Types.DonorProfile, Types.DonorPublicView>(
       func(d) { toPublicView(d, 0.0, 0.0) }
     );

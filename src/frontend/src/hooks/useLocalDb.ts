@@ -164,7 +164,7 @@ export const useLocalDb = create<LocalDbState>()(
           role: "viewer",
           password: "password",
           isVerified: true,
-        }
+        },
       ],
       donors: [
         {
@@ -181,7 +181,7 @@ export const useLocalDb = create<LocalDbState>()(
           lng: 91.8687,
           isAvailable: true,
           donationCount: 5,
-        }
+        },
       ],
       shops: [
         {
@@ -194,10 +194,10 @@ export const useLocalDb = create<LocalDbState>()(
           ownerId: "shopkeeper-id",
           products: [
             { name: "Paracetamol", price: 10 },
-            { name: "Insulin", price: 450 }
+            { name: "Insulin", price: 450 },
           ],
           isVerified: true,
-        }
+        },
       ],
       messages: [],
       reports: [],
@@ -333,13 +333,14 @@ export const useLocalDb = create<LocalDbState>()(
         }),
       logDonation: (id, date) => {
         const donationTime = date || Date.now();
+        const isRecovered = Date.now() - donationTime >= FOUR_MONTHS_MS;
         set((state) => ({
           donors: state.donors.map((d) =>
             d.id === id
               ? {
                   ...d,
                   lastDonationDate: donationTime,
-                  isAvailable: false,
+                  isAvailable: isRecovered,
                   donationCount: d.donationCount + 1,
                 }
               : d,
@@ -360,7 +361,7 @@ export const useLocalDb = create<LocalDbState>()(
         }));
       },
       addShop: (shop) => {
-        const id = "shop-" + Math.random().toString(36).substring(2, 9);
+        const id = `shop-${Math.random().toString(36).substring(2, 9)}`;
         // New shops start as unverified; verification must be performed separately
         const newShop = {
           ...shop,
@@ -396,7 +397,7 @@ export const useLocalDb = create<LocalDbState>()(
           ),
         })),
       sendMessage: (senderId, senderName, receiverId, text) => {
-        const id = "msg-" + Math.random().toString(36).substring(2, 9);
+        const id = `msg-${Math.random().toString(36).substring(2, 9)}`;
         const newMsg: ChatMessage = {
           id,
           senderId,
@@ -438,7 +439,7 @@ export const useLocalDb = create<LocalDbState>()(
         }));
       },
       submitReport: (userId, userName, category, message) => {
-        const id = "rep-" + Math.random().toString(36).substring(2, 9);
+        const id = `rep-${Math.random().toString(36).substring(2, 9)}`;
         const newReport: FeedbackReport = {
           id,
           userId,
@@ -461,19 +462,32 @@ export const useLocalDb = create<LocalDbState>()(
       merge: (persistedState: any, currentState: LocalDbState) => {
         if (!persistedState) return currentState;
         const merged = { ...currentState, ...persistedState };
-        
+
         // Ensure all state collections are arrays and fallback to initial defaults if corrupted
-        merged.users = Array.isArray(merged.users) ? merged.users : currentState.users;
-        merged.donors = Array.isArray(merged.donors) ? merged.donors : currentState.donors;
-        merged.shops = Array.isArray(merged.shops) ? merged.shops : currentState.shops;
-        merged.messages = Array.isArray(merged.messages) ? merged.messages : currentState.messages;
-        merged.reports = Array.isArray(merged.reports) ? merged.reports : currentState.reports;
+        merged.users = Array.isArray(merged.users)
+          ? merged.users
+          : currentState.users;
+        merged.donors = Array.isArray(merged.donors)
+          ? merged.donors
+          : currentState.donors;
+        merged.shops = Array.isArray(merged.shops)
+          ? merged.shops
+          : currentState.shops;
+        merged.messages = Array.isArray(merged.messages)
+          ? merged.messages
+          : currentState.messages;
+        merged.reports = Array.isArray(merged.reports)
+          ? merged.reports
+          : currentState.reports;
 
         // Guarantee that the default initial users are always present in the users list
         const defaultUsers = currentState.users || [];
         for (const defUser of defaultUsers) {
           const exists = merged.users.some(
-            (u: any) => u && typeof u.email === "string" && u.email.toLowerCase() === defUser.email.toLowerCase()
+            (u: any) =>
+              u &&
+              typeof u.email === "string" &&
+              u.email.toLowerCase() === defUser.email.toLowerCase(),
           );
           if (!exists) {
             merged.users.push(defUser);
@@ -481,7 +495,10 @@ export const useLocalDb = create<LocalDbState>()(
         }
 
         // Validate currentUser to avoid crashes with partial/corrupted user objects
-        if (merged.currentUser && (!merged.currentUser.email || !merged.currentUser.role)) {
+        if (
+          merged.currentUser &&
+          (!merged.currentUser.email || !merged.currentUser.role)
+        ) {
           merged.currentUser = null;
         }
 

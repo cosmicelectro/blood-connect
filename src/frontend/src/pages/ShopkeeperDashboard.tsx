@@ -23,16 +23,10 @@ import { useMessages, useSendMessage } from "../hooks/useBackend";
 import { type LocalShop, useLocalDb } from "../hooks/useLocalDb";
 
 export function ShopkeeperDashboard() {
-  const { user, language } = useAuth();
+  const { user } = useAuth();
   const { t } = useTranslation();
-  const {
-    shops,
-    addShop,
-    updateShop,
-    deleteShop,
-    addShopProduct,
-    removeShopProduct,
-  } = useLocalDb();
+  const { shops, addShop, updateShop, addShopProduct, removeShopProduct } =
+    useLocalDb();
 
   const [selectedShopId, setSelectedShopId] = useState<string | null>(null);
   const [editingShop, setEditingShop] = useState<LocalShop | null>(null);
@@ -92,7 +86,7 @@ export function ShopkeeperDashboard() {
       return;
     }
     const price = Number.parseFloat(productPrice);
-    if (!productName || isNaN(price)) {
+    if (!productName || Number.isNaN(price)) {
       toast.error("Enter a valid name and price");
       return;
     }
@@ -126,12 +120,6 @@ export function ShopkeeperDashboard() {
     e.preventDefault();
     if (!replyText.trim() || !selectedThreadSenderId) return;
 
-    // Find the sender's name
-    const firstMsg = (messages || []).find(
-      (m) => m.senderId === selectedThreadSenderId,
-    );
-    const senderName = firstMsg ? firstMsg.senderName : "Customer";
-
     await sendMessage.mutateAsync({
       senderId: user!.id,
       senderName: user!.name,
@@ -143,7 +131,7 @@ export function ShopkeeperDashboard() {
 
   // Group messages by thread sender
   const chatThreadsMap = new Map();
-  (messages || []).forEach((m) => {
+  for (const m of messages || []) {
     const threadPartnerId = m.senderId === user?.id ? m.receiverId : m.senderId;
     if (!chatThreadsMap.has(threadPartnerId)) {
       chatThreadsMap.set(threadPartnerId, {
@@ -152,7 +140,7 @@ export function ShopkeeperDashboard() {
       });
     }
     chatThreadsMap.get(threadPartnerId).messages.push(m);
-  });
+  }
 
   const chatThreads = Array.from(chatThreadsMap.entries());
   const selectedThreadMessages = selectedThreadSenderId
@@ -332,7 +320,7 @@ export function ShopkeeperDashboard() {
                   ) : (
                     selectedShop.products.map((prod, idx) => (
                       <div
-                        key={prod.name + "-" + idx}
+                        key={`${prod.name}-${idx}`}
                         className="flex items-center justify-between border border-border/60 p-3 rounded-lg bg-card hover:bg-muted/10"
                       >
                         <div>
@@ -373,6 +361,7 @@ export function ShopkeeperDashboard() {
                       {chatThreads.map(([partnerId, data]: any) => (
                         <button
                           key={partnerId}
+                          type="button"
                           onClick={() => setSelectedThreadSenderId(partnerId)}
                           className={`w-full text-left p-2 rounded text-xs font-semibold truncate ${
                             selectedThreadSenderId === partnerId
