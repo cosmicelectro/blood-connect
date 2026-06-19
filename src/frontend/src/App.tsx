@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { Layout } from "./components/Layout";
+import { Toaster } from "./components/ui/sonner";
 import { useAuth } from "./hooks/useAuth";
 import { useLocalDb } from "./hooks/useLocalDb";
 import { AdminDashboard } from "./pages/AdminDashboard";
@@ -145,5 +146,10 @@ export default function App() {
   // //   }
   // // }, [resetStore]);
 
-  return <RouterProvider router={router} />;
+  return (
+    <>
+      <RouterProvider router={router} />
+      <Toaster richColors position="top-right" />
+    </>
+  );
 }

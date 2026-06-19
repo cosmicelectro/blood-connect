@@ -102,13 +102,33 @@ export function AuthPage() {
 
   const handleCredentialsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      toast.error("Please fill in all fields.");
+    const trimmedEmail = email.trim();
+    const trimmedMobile = mobile.trim();
+    const trimmedName = name.trim();
+
+    if (!trimmedEmail || !password) {
+      toast.error("Email and password are required.");
       return;
     }
 
     try {
       if (isSignUp) {
+        if (!trimmedName) {
+          toast.error("Full name is required.");
+          return;
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+          toast.error("Enter a valid email address.");
+          return;
+        }
+        if (!trimmedMobile) {
+          toast.error("Mobile number is required.");
+          return;
+        }
+        if (trimmedMobile.replace(/\D/g, "").length < 10) {
+          toast.error("Enter a valid mobile number.");
+          return;
+        }
         if (password.length < 8) {
           toast.error("Password must be at least 8 characters long.");
           return;
@@ -117,14 +137,10 @@ export function AuthPage() {
           toast.error("Passwords do not match.");
           return;
         }
-        if (!mobile.trim()) {
-          toast.error("Mobile number is required.");
-          return;
-        }
         const userObj = registerNewProfile(
-          email,
-          mobile,
-          name || email.split("@")[0],
+          trimmedEmail,
+          trimmedMobile,
+          trimmedName,
           role,
           password,
           {
@@ -138,35 +154,31 @@ export function AuthPage() {
         );
 
         toast.success(`Success! Registered and logged in as ${userObj.name}`);
-        setTimeout(() => {
-          navigate({
-            to:
-              userObj.role === "admin"
-                ? "/admin"
-                : userObj.role === "donor"
-                  ? "/donor"
-                  : userObj.role === "shopkeeper"
-                    ? "/shopkeeper"
-                    : "/",
-          });
-        }, 800);
+        navigate({
+          to:
+            userObj.role === "admin"
+              ? "/admin"
+              : userObj.role === "donor"
+                ? "/donor"
+                : userObj.role === "shopkeeper"
+                  ? "/shopkeeper"
+                  : "/",
+        });
       } else {
-        const userObj = loginWithCredentials(email, password);
+        const userObj = loginWithCredentials(trimmedEmail, password);
         toast.success(
           `Success! Logged in as ${userObj.name} (${userObj.role})`,
         );
-        setTimeout(() => {
-          navigate({
-            to:
-              userObj.role === "admin"
-                ? "/admin"
-                : userObj.role === "donor"
-                  ? "/donor"
-                  : userObj.role === "shopkeeper"
-                    ? "/shopkeeper"
-                    : "/",
-          });
-        }, 800);
+        navigate({
+          to:
+            userObj.role === "admin"
+              ? "/admin"
+              : userObj.role === "donor"
+                ? "/donor"
+                : userObj.role === "shopkeeper"
+                  ? "/shopkeeper"
+                  : "/",
+        });
       }
     } catch (err: any) {
       toast.error(err.message || "Authentication failed");
@@ -276,7 +288,11 @@ export function AuthPage() {
           )}
 
           {/* Credentials Email & Password Form */}
-          <form onSubmit={handleCredentialsSubmit} className="space-y-4">
+          <form
+            onSubmit={handleCredentialsSubmit}
+            className="space-y-4"
+            noValidate
+          >
             {isSignUp && (
               <div className="space-y-1.5 animate-in slide-in-from-top-1">
                 <Label htmlFor="reg-name">{t("fullName")}</Label>
