@@ -64,7 +64,7 @@ export interface FeedbackReport {
   timestamp: number;
 }
 
-interface LocalDbState {
+export interface LocalDbState {
   users: LocalUser[];
   donors: LocalDonor[];
   shops: LocalShop[];
@@ -126,6 +126,11 @@ interface LocalDbState {
     message: string,
   ) => void;
   deleteReport: (reportId: string) => void;
+  replaceSharedState: (
+    snapshot: Partial<
+      Pick<LocalDbState, "users" | "donors" | "shops" | "messages" | "reports">
+    >,
+  ) => void;
   resetStore: () => void;
 }
 
@@ -465,6 +470,23 @@ export const useLocalDb = create<LocalDbState>()(
       deleteReport: (reportId) =>
         set((state) => ({
           reports: state.reports.filter((r) => r.id !== reportId),
+        })),
+      replaceSharedState: (snapshot) =>
+        set((state) => ({
+          users: Array.isArray(snapshot.users) ? snapshot.users : state.users,
+          donors: Array.isArray(snapshot.donors)
+            ? snapshot.donors
+            : state.donors,
+          shops: Array.isArray(snapshot.shops) ? snapshot.shops : state.shops,
+          messages: Array.isArray(snapshot.messages)
+            ? snapshot.messages
+            : state.messages,
+          reports: Array.isArray(snapshot.reports)
+            ? snapshot.reports
+            : state.reports,
+          currentUser: state.currentUser,
+          language: state.language,
+          theme: state.theme,
         })),
     }),
     {

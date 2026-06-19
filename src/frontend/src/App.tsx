@@ -11,6 +11,11 @@ import { Layout } from "./components/Layout";
 import { Toaster } from "./components/ui/sonner";
 import { useAuth } from "./hooks/useAuth";
 import { useLocalDb } from "./hooks/useLocalDb";
+import {
+  loadSharedState,
+  saveSharedState,
+  toSharedSnapshot,
+} from "./lib/remoteStore";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { AuthPage } from "./pages/AuthPage";
 import { ChatPage } from "./pages/ChatPage";
@@ -145,6 +150,37 @@ export default function App() {
   // //     resetStore();
   // //   }
   // // }, [resetStore]);
+
+  useEffect(() => {
+    let cancelled = false;
+    let saveTimer: ReturnType<typeof setTimeout> | null = null;
+    let hydrating = true;
+
+    loadSharedState()
+      .then((snapshot) => {
+        if (!cancelled && snapshot) {
+          useLocalDb.getState().replaceSharedState(snapshot);
+        }
+      })
+      .finally(() => {
+        hydrating = false;
+      });
+
+    const unsubscribe = useLocalDb.subscribe((state) => {
+      if (hydrating) return;
+      if (saveTimer) clearTimeout(saveTimer);
+
+      saveTimer = setTimeout(() => {
+        saveSharedState(toSharedSnapshot(state));
+      }, 400);
+    });
+
+    return () => {
+      cancelled = true;
+      if (saveTimer) clearTimeout(saveTimer);
+      unsubscribe();
+    };
+  }, []);
 
   return (
     <>
