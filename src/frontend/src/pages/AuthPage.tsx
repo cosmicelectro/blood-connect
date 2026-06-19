@@ -46,6 +46,7 @@ export function AuthPage() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
+  const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
@@ -116,8 +117,13 @@ export function AuthPage() {
           toast.error("Passwords do not match.");
           return;
         }
+        if (!mobile.trim()) {
+          toast.error("Mobile number is required.");
+          return;
+        }
         const userObj = registerNewProfile(
           email,
+          mobile,
           name || email.split("@")[0],
           role,
           password,
@@ -303,6 +309,20 @@ export function AuthPage() {
                 />
               </div>
             </div>
+
+            {isSignUp && (
+              <div className="space-y-1.5 animate-in slide-in-from-top-1">
+                <Label htmlFor="mobile">Mobile Number</Label>
+                <Input
+                  id="mobile"
+                  type="tel"
+                  placeholder="01700000000"
+                  required
+                  value={mobile}
+                  onChange={(e) => setMobile(e.target.value)}
+                />
+              </div>
+            )}
 
             <div className="space-y-1.5">
               <Label htmlFor="password">{t("password")}</Label>

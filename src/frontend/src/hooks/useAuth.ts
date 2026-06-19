@@ -1,5 +1,7 @@
 import { useLocalDb } from "./useLocalDb";
 
+const normalizeMobile = (mobile: string) => mobile.replace(/\D/g, "");
+
 export function useAuth() {
   const {
     currentUser,
@@ -29,6 +31,7 @@ export function useAuth() {
     if (!user) {
       user = registerUser(
         userEmail,
+        "",
         `${defaultRole.charAt(0).toUpperCase() + defaultRole.slice(1)} User`,
         defaultRole,
         "oauth-pass",
@@ -51,6 +54,7 @@ export function useAuth() {
       if (normalizedEmail === "admin@bloodconnect.org") {
         user = registerUser(
           "admin@bloodconnect.org",
+          "01700000001",
           "System Admin",
           "admin",
           password || "password",
@@ -60,6 +64,7 @@ export function useAuth() {
       } else if (normalizedEmail === "donor@bloodconnect.org") {
         user = registerUser(
           "donor@bloodconnect.org",
+          "01700000002",
           "John Donor",
           "donor",
           password || "password",
@@ -69,6 +74,7 @@ export function useAuth() {
       } else if (normalizedEmail === "shopkeeper@bloodconnect.org") {
         user = registerUser(
           "shopkeeper@bloodconnect.org",
+          "01700000003",
           "Abir Shopkeeper",
           "shopkeeper",
           password || "password",
@@ -78,6 +84,7 @@ export function useAuth() {
       } else if (normalizedEmail === "viewer@bloodconnect.org") {
         user = registerUser(
           "viewer@bloodconnect.org",
+          "01700000004",
           "Tanvir Seeker",
           "viewer",
           password || "password",
@@ -101,6 +108,7 @@ export function useAuth() {
 
   const registerNewProfile = (
     email: string,
+    mobile: string,
     name: string,
     role: "donor" | "shopkeeper" | "viewer",
     password?: string,
@@ -115,16 +123,29 @@ export function useAuth() {
   ) => {
     const safeUsers = users || [];
     const normalizedEmail = email.trim().toLowerCase();
+    const normalizedMobile = normalizeMobile(mobile);
+    if (!normalizedMobile) {
+      throw new Error("Mobile number is required.");
+    }
     const existing = safeUsers.find(
       (u) =>
         u &&
         typeof u.email === "string" &&
-        u.email.toLowerCase() === normalizedEmail,
+        (u.email.toLowerCase() === normalizedEmail ||
+          normalizeMobile(u.mobile || "") === normalizedMobile),
     );
     if (existing) {
-      throw new Error("Email already registered. Please login instead.");
+      throw new Error(
+        "Email or mobile number already registered. Please login instead.",
+      );
     }
-    const newUser = registerUser(normalizedEmail, name, role, password);
+    const newUser = registerUser(
+      normalizedEmail,
+      normalizedMobile,
+      name,
+      role,
+      password,
+    );
     verifyUser(newUser.id);
     newUser.isVerified = true;
 
@@ -135,7 +156,7 @@ export function useAuth() {
         id: newUser.id,
         name: newUser.name,
         bloodType: "O+", // Default blood type for fast registration
-        phone: "01700000000",
+        phone: normalizedMobile,
         address: locationData?.area || "Sylhet",
         division: locationData?.division || "Sylhet",
         district: locationData?.district || "Sylhet",

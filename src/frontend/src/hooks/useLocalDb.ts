@@ -39,6 +39,7 @@ export interface LocalDonor {
 export interface LocalUser {
   id: string;
   email: string;
+  mobile: string;
   name: string;
   role: "admin" | "donor" | "shopkeeper" | "viewer";
   password?: string;
@@ -80,6 +81,7 @@ interface LocalDbState {
   setCurrentUser: (user: LocalUser | null) => void;
   registerUser: (
     email: string,
+    mobile: string,
     name: string,
     role: LocalUser["role"],
     password?: string,
@@ -130,6 +132,7 @@ interface LocalDbState {
 const FOUR_MONTHS_MS = 120 * 24 * 60 * 60 * 1000;
 
 const normalizeEmail = (email: string) => email.trim().toLowerCase();
+const normalizeMobile = (mobile: string) => mobile.replace(/\D/g, "");
 
 export const useLocalDb = create<LocalDbState>()(
   persist(
@@ -138,6 +141,7 @@ export const useLocalDb = create<LocalDbState>()(
         {
           id: "admin-id",
           email: "admin@bloodconnect.org",
+          mobile: "01700000001",
           name: "System Admin",
           role: "admin",
           password: "password",
@@ -146,6 +150,7 @@ export const useLocalDb = create<LocalDbState>()(
         {
           id: "donor-id",
           email: "donor@bloodconnect.org",
+          mobile: "01700000002",
           name: "John Donor",
           role: "donor",
           password: "password",
@@ -154,6 +159,7 @@ export const useLocalDb = create<LocalDbState>()(
         {
           id: "shopkeeper-id",
           email: "shopkeeper@bloodconnect.org",
+          mobile: "01700000003",
           name: "Abir Shopkeeper",
           role: "shopkeeper",
           password: "password",
@@ -162,6 +168,7 @@ export const useLocalDb = create<LocalDbState>()(
         {
           id: "viewer-id",
           email: "viewer@bloodconnect.org",
+          mobile: "01700000004",
           name: "Tanvir Seeker",
           role: "viewer",
           password: "password",
@@ -232,11 +239,12 @@ export const useLocalDb = create<LocalDbState>()(
             u.id === userId ? { ...u, password: newPassword } : u,
           ),
         })),
-      registerUser: (email, name, role, password) => {
+      registerUser: (email, mobile, name, role, password) => {
         const id = Math.random().toString(36).substring(2, 9);
         const newUser: LocalUser = {
           id,
           email: normalizeEmail(email),
+          mobile: normalizeMobile(mobile),
           name,
           role,
           password: password || "password123",
@@ -495,6 +503,7 @@ export const useLocalDb = create<LocalDbState>()(
               ...merged.users[existingIndex],
               ...defUser,
               email: defUser.email,
+              mobile: defUser.mobile,
               password: defUser.password,
               isVerified: true,
             };
@@ -537,7 +546,9 @@ export const useLocalDb = create<LocalDbState>()(
         // Validate currentUser to avoid crashes with partial/corrupted user objects
         if (
           merged.currentUser &&
-          (!merged.currentUser.email || !merged.currentUser.role)
+          (!merged.currentUser.email ||
+            !merged.currentUser.mobile ||
+            !merged.currentUser.role)
         ) {
           merged.currentUser = null;
         }
