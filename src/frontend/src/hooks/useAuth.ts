@@ -39,16 +39,16 @@ export function useAuth() {
   };
 
   const loginWithCredentials = (email: string, password?: string) => {
+    const normalizedEmail = email.trim().toLowerCase();
     const safeUsers = users || [];
     let user = safeUsers.find(
       (u) =>
         u &&
         typeof u.email === "string" &&
-        u.email.toLowerCase() === email.toLowerCase(),
+        u.email.toLowerCase() === normalizedEmail,
     );
     if (!user) {
-      const lowerEmail = email.toLowerCase();
-      if (lowerEmail === "admin@bloodconnect.org") {
+      if (normalizedEmail === "admin@bloodconnect.org") {
         user = registerUser(
           "admin@bloodconnect.org",
           "System Admin",
@@ -57,7 +57,7 @@ export function useAuth() {
         );
         verifyUser(user.id);
         user.isVerified = true;
-      } else if (lowerEmail === "donor@bloodconnect.org") {
+      } else if (normalizedEmail === "donor@bloodconnect.org") {
         user = registerUser(
           "donor@bloodconnect.org",
           "John Donor",
@@ -66,7 +66,7 @@ export function useAuth() {
         );
         verifyUser(user.id);
         user.isVerified = true;
-      } else if (lowerEmail === "shopkeeper@bloodconnect.org") {
+      } else if (normalizedEmail === "shopkeeper@bloodconnect.org") {
         user = registerUser(
           "shopkeeper@bloodconnect.org",
           "Abir Shopkeeper",
@@ -75,7 +75,7 @@ export function useAuth() {
         );
         verifyUser(user.id);
         user.isVerified = true;
-      } else if (lowerEmail === "viewer@bloodconnect.org") {
+      } else if (normalizedEmail === "viewer@bloodconnect.org") {
         user = registerUser(
           "viewer@bloodconnect.org",
           "Tanvir Seeker",
@@ -114,16 +114,17 @@ export function useAuth() {
     },
   ) => {
     const safeUsers = users || [];
+    const normalizedEmail = email.trim().toLowerCase();
     const existing = safeUsers.find(
       (u) =>
         u &&
         typeof u.email === "string" &&
-        u.email.toLowerCase() === email.toLowerCase(),
+        u.email.toLowerCase() === normalizedEmail,
     );
     if (existing) {
       throw new Error("Email already registered. Please login instead.");
     }
-    const newUser = registerUser(email, name, role, password);
+    const newUser = registerUser(normalizedEmail, name, role, password);
     verifyUser(newUser.id);
     newUser.isVerified = true;
 

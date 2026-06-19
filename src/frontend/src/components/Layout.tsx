@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   Droplets,
   Heart,
@@ -30,7 +30,6 @@ export function Layout({ children }: LayoutProps) {
   const {
     isLoading,
     isLoggedIn,
-    login,
     logout,
     user,
     role,
@@ -41,6 +40,7 @@ export function Layout({ children }: LayoutProps) {
   } = useAuth();
 
   const routerState = useRouterState();
+  const navigate = useNavigate();
   const currentPath = routerState.location.pathname;
   const { t, i18n } = useTranslation();
 
@@ -205,7 +205,7 @@ export function Layout({ children }: LayoutProps) {
             ) : (
               <Button
                 size="sm"
-                onClick={login}
+                onClick={() => navigate({ to: "/auth" })}
                 disabled={isLoading}
                 data-ocid="nav.login_button"
               >
@@ -307,7 +307,7 @@ export function Layout({ children }: LayoutProps) {
                     size="sm"
                     className="w-full"
                     onClick={() => {
-                      login();
+                      navigate({ to: "/auth" });
                       setMenuOpen(false);
                     }}
                     disabled={isLoading}

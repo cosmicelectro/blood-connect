@@ -129,6 +129,8 @@ interface LocalDbState {
 
 const FOUR_MONTHS_MS = 120 * 24 * 60 * 60 * 1000;
 
+const normalizeEmail = (email: string) => email.trim().toLowerCase();
+
 export const useLocalDb = create<LocalDbState>()(
   persist(
     (set, get) => ({
@@ -234,7 +236,7 @@ export const useLocalDb = create<LocalDbState>()(
         const id = Math.random().toString(36).substring(2, 9);
         const newUser: LocalUser = {
           id,
-          email,
+          email: normalizeEmail(email),
           name,
           role,
           password: password || "password123",
@@ -483,14 +485,52 @@ export const useLocalDb = create<LocalDbState>()(
         // Guarantee that the default initial users are always present in the users list
         const defaultUsers = currentState.users || [];
         for (const defUser of defaultUsers) {
-          const exists = merged.users.some(
-            (u: any) =>
-              u &&
-              typeof u.email === "string" &&
-              u.email.toLowerCase() === defUser.email.toLowerCase(),
+          const existingIndex = merged.users.findIndex(
+            (u: any) => u?.email && normalizeEmail(u.email) === defUser.email,
           );
-          if (!exists) {
+          if (existingIndex === -1) {
             merged.users.push(defUser);
+          } else {
+            merged.users[existingIndex] = {
+              ...merged.users[existingIndex],
+              ...defUser,
+              email: defUser.email,
+              password: defUser.password,
+              isVerified: true,
+            };
+          }
+        }
+
+        const defaultDonors = currentState.donors || [];
+        for (const defDonor of defaultDonors) {
+          const existingIndex = merged.donors.findIndex(
+            (d: any) => d?.id === defDonor.id,
+          );
+          if (existingIndex === -1) {
+            merged.donors.push(defDonor);
+          } else {
+            merged.donors[existingIndex] = {
+              ...defDonor,
+              ...merged.donors[existingIndex],
+              id: defDonor.id,
+            };
+          }
+        }
+
+        const defaultShops = currentState.shops || [];
+        for (const defShop of defaultShops) {
+          const existingIndex = merged.shops.findIndex(
+            (s: any) => s?.id === defShop.id,
+          );
+          if (existingIndex === -1) {
+            merged.shops.push(defShop);
+          } else {
+            merged.shops[existingIndex] = {
+              ...defShop,
+              ...merged.shops[existingIndex],
+              id: defShop.id,
+              ownerId: defShop.ownerId,
+            };
           }
         }
 
@@ -500,6 +540,14 @@ export const useLocalDb = create<LocalDbState>()(
           (!merged.currentUser.email || !merged.currentUser.role)
         ) {
           merged.currentUser = null;
+        }
+        if (merged.currentUser?.email) {
+          const canonicalCurrentUser = merged.users.find(
+            (u: LocalUser) =>
+              normalizeEmail(u.email) ===
+              normalizeEmail(merged.currentUser.email),
+          );
+          merged.currentUser = canonicalCurrentUser || null;
         }
 
         return merged;
