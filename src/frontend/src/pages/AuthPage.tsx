@@ -52,6 +52,11 @@ export function AuthPage() {
   const [name, setName] = useState("");
   const [role, setRole] = useState<"donor" | "shopkeeper" | "viewer">("viewer");
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formMessage, setFormMessage] = useState<{
+    type: "error" | "success";
+    text: string;
+  } | null>(null);
 
   // OAuth Popup Simulation State
   const [oauthPopup, setOauthPopup] = useState<{
@@ -100,41 +105,56 @@ export function AuthPage() {
     setOauthPopup({ isOpen: true, provider });
   };
 
-  const handleCredentialsSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const rolePath = (userRole: string) => {
+    if (userRole === "admin") return "/admin";
+    if (userRole === "donor") return "/donor";
+    if (userRole === "shopkeeper") return "/shopkeeper";
+    return "/";
+  };
+
+  const showError = (message: string) => {
+    setFormMessage({ type: "error", text: message });
+    toast.error(message);
+  };
+
+  const submitCredentials = () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    setFormMessage(null);
     const trimmedEmail = email.trim();
     const trimmedMobile = mobile.trim();
     const trimmedName = name.trim();
 
     if (!trimmedEmail || !password) {
-      toast.error("Email and password are required.");
+      showError("Email and password are required.");
+      setIsSubmitting(false);
       return;
     }
 
     try {
       if (isSignUp) {
         if (!trimmedName) {
-          toast.error("Full name is required.");
+          showError("Full name is required.");
           return;
         }
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-          toast.error("Enter a valid email address.");
+          showError("Enter a valid email address.");
           return;
         }
         if (!trimmedMobile) {
-          toast.error("Mobile number is required.");
+          showError("Mobile number is required.");
           return;
         }
         if (trimmedMobile.replace(/\D/g, "").length < 10) {
-          toast.error("Enter a valid mobile number.");
+          showError("Enter a valid mobile number.");
           return;
         }
         if (password.length < 8) {
-          toast.error("Password must be at least 8 characters long.");
+          showError("Password must be at least 8 characters long.");
           return;
         }
         if (password !== confirmPassword) {
-          toast.error("Passwords do not match.");
+          showError("Passwords do not match.");
           return;
         }
         const userObj = registerNewProfile(
@@ -153,36 +173,27 @@ export function AuthPage() {
           },
         );
 
-        toast.success(`Success! Registered and logged in as ${userObj.name}`);
-        navigate({
-          to:
-            userObj.role === "admin"
-              ? "/admin"
-              : userObj.role === "donor"
-                ? "/donor"
-                : userObj.role === "shopkeeper"
-                  ? "/shopkeeper"
-                  : "/",
-        });
+        const message = `Success! Registered and logged in as ${userObj.name}`;
+        setFormMessage({ type: "success", text: message });
+        toast.success(message);
+        navigate({ to: rolePath(userObj.role) });
       } else {
         const userObj = loginWithCredentials(trimmedEmail, password);
-        toast.success(
-          `Success! Logged in as ${userObj.name} (${userObj.role})`,
-        );
-        navigate({
-          to:
-            userObj.role === "admin"
-              ? "/admin"
-              : userObj.role === "donor"
-                ? "/donor"
-                : userObj.role === "shopkeeper"
-                  ? "/shopkeeper"
-                  : "/",
-        });
+        const message = `Success! Logged in as ${userObj.name} (${userObj.role})`;
+        setFormMessage({ type: "success", text: message });
+        toast.success(message);
+        navigate({ to: rolePath(userObj.role) });
       }
     } catch (err: any) {
-      toast.error(err.message || "Authentication failed");
+      showError(err.message || "Authentication failed");
+    } finally {
+      setIsSubmitting(false);
     }
+  };
+
+  const handleCredentialsSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    submitCredentials();
   };
 
   return (
@@ -212,7 +223,10 @@ export function AuthPage() {
           <div className="flex bg-muted p-1 rounded-lg mb-6">
             <button
               type="button"
-              onClick={() => setIsSignUp(false)}
+              onClick={() => {
+                setIsSignUp(false);
+                setFormMessage(null);
+              }}
               className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
                 !isSignUp
                   ? "bg-card shadow-sm text-foreground"
@@ -223,7 +237,10 @@ export function AuthPage() {
             </button>
             <button
               type="button"
-              onClick={() => setIsSignUp(true)}
+              onClick={() => {
+                setIsSignUp(true);
+                setFormMessage(null);
+              }}
               className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
                 isSignUp
                   ? "bg-card shadow-sm text-foreground"
@@ -458,9 +475,40 @@ export function AuthPage() {
               </>
             )}
 
-            <Button type="submit" className="w-full gap-2">
-              {isSignUp ? t("register") : t("login")}
-              <ArrowRight className="h-4 w-4" />
+            {formMessage && (
+              <output
+                className={`rounded-md border px-3 py-2 text-xs font-medium ${
+                  formMessage.type === "error"
+                    ? "border-destructive/30 bg-destructive/10 text-destructive"
+                    : "border-emerald-500/30 bg-emerald-500/10 text-emerald-700"
+                }`}
+                aria-live="polite"
+              >
+                {formMessage.text}
+              </output>
+            )}
+
+            <Button
+              type="submit"
+              className="w-full gap-2"
+              disabled={isSubmitting}
+              onClick={(e) => {
+                e.preventDefault();
+                submitCredentials();
+              }}
+            >
+              {isSubmitting
+                ? isSignUp
+                  ? "Registering..."
+                  : "Logging in..."
+                : isSignUp
+                  ? t("register")
+                  : t("login")}
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ArrowRight className="h-4 w-4" />
+              )}
             </Button>
           </form>
 
