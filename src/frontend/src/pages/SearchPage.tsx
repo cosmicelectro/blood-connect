@@ -91,7 +91,7 @@ export function SearchPage() {
     area,
     hasLocation ? locationState.lat : 0,
     hasLocation ? locationState.lng : 0,
-    searchTriggered && hasLocation,
+    searchTriggered,
   );
 
   const {
@@ -100,11 +100,11 @@ export function SearchPage() {
     error: allError,
   } = useAllDonors();
 
-  const isLoading = searchTriggered && hasLocation ? searchLoading : allLoading;
-  const hasError = searchTriggered && hasLocation ? searchError : allError;
+  const isLoading = searchTriggered ? searchLoading : allLoading;
+  const hasError = searchTriggered ? searchError : allError;
 
   let displayedDonors: any[] = [];
-  if (searchTriggered && hasLocation && searchResults) {
+  if (searchTriggered && searchResults) {
     displayedDonors = searchResults;
   } else if (allDonors) {
     displayedDonors =

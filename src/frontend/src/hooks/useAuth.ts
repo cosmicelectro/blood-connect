@@ -11,7 +11,7 @@ export function useAuth() {
     theme,
     setLanguage,
     setTheme,
-    updatePassword,
+    updatePassword: updateStoredPassword,
     adminChangeUserRole,
     verifyUser,
   } = useLocalDb();
@@ -175,6 +175,21 @@ export function useAuth() {
     setCurrentUser(null);
     // Hard refresh to home page to clear all UI dashboards
     window.location.href = "/";
+  };
+
+  const updatePassword = (oldPassword: string, newPassword: string) => {
+    const user = useLocalDb.getState().currentUser;
+    if (!user) {
+      throw new Error("You must be logged in to change your password.");
+    }
+    if (user.password !== oldPassword) {
+      throw new Error("Current password is incorrect.");
+    }
+    if (newPassword.length < 8) {
+      throw new Error("Password must be at least 8 characters long.");
+    }
+    updateStoredPassword(user.id, newPassword);
+    setCurrentUser({ ...user, password: newPassword });
   };
 
   return {

@@ -418,6 +418,7 @@ export function AuthPage() {
                   placeholder="••••••••"
                   className="pl-9"
                   required
+                  minLength={8}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
@@ -446,6 +447,7 @@ export function AuthPage() {
                     placeholder="••••••••"
                     className="pl-9"
                     required
+                    minLength={8}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                   />

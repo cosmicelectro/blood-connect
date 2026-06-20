@@ -90,6 +90,7 @@ export interface LocalDbState {
   updatePassword: (userId: string, newPassword: string) => void;
   adminChangeUserRole: (userId: string, newRole: LocalUser["role"]) => void;
   updateUserRole: (userId: string, newRole: LocalUser["role"]) => void;
+  deleteUserAccount: (userId: string) => void;
   verifyUser: (userId: string) => void;
 
   // Donor actions
@@ -301,6 +302,20 @@ export const useLocalDb = create<LocalDbState>()(
               : state.currentUser;
           return { users: updatedUsers, currentUser: updatedCurrentUser };
         }),
+      deleteUserAccount: (userId) =>
+        set((state) => ({
+          users: state.users.filter((u) => u.id !== userId),
+          donors: state.donors.filter((d) => d.id !== userId),
+          shops: state.shops.filter(
+            (s) => s.ownerId !== userId && s.id !== userId,
+          ),
+          messages: state.messages.filter(
+            (m) => m.senderId !== userId && m.receiverId !== userId,
+          ),
+          reports: state.reports.filter((r) => r.userId !== userId),
+          currentUser:
+            state.currentUser?.id === userId ? null : state.currentUser,
+        })),
       addDonor: (donor) =>
         set((state) => ({
           donors: [
@@ -511,59 +526,6 @@ export const useLocalDb = create<LocalDbState>()(
         merged.reports = Array.isArray(merged.reports)
           ? merged.reports
           : currentState.reports;
-
-        // Guarantee that the default initial users are always present in the users list
-        const defaultUsers = currentState.users || [];
-        for (const defUser of defaultUsers) {
-          const existingIndex = merged.users.findIndex(
-            (u: any) => u?.email && normalizeEmail(u.email) === defUser.email,
-          );
-          if (existingIndex === -1) {
-            merged.users.push(defUser);
-          } else {
-            merged.users[existingIndex] = {
-              ...merged.users[existingIndex],
-              ...defUser,
-              email: defUser.email,
-              mobile: defUser.mobile,
-              password: defUser.password,
-              isVerified: true,
-            };
-          }
-        }
-
-        const defaultDonors = currentState.donors || [];
-        for (const defDonor of defaultDonors) {
-          const existingIndex = merged.donors.findIndex(
-            (d: any) => d?.id === defDonor.id,
-          );
-          if (existingIndex === -1) {
-            merged.donors.push(defDonor);
-          } else {
-            merged.donors[existingIndex] = {
-              ...defDonor,
-              ...merged.donors[existingIndex],
-              id: defDonor.id,
-            };
-          }
-        }
-
-        const defaultShops = currentState.shops || [];
-        for (const defShop of defaultShops) {
-          const existingIndex = merged.shops.findIndex(
-            (s: any) => s?.id === defShop.id,
-          );
-          if (existingIndex === -1) {
-            merged.shops.push(defShop);
-          } else {
-            merged.shops[existingIndex] = {
-              ...defShop,
-              ...merged.shops[existingIndex],
-              id: defShop.id,
-              ownerId: defShop.ownerId,
-            };
-          }
-        }
 
         // Validate currentUser to avoid crashes with partial/corrupted user objects
         if (

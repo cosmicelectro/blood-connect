@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
   Calendar,
@@ -32,12 +33,13 @@ export function AdminDashboard() {
   const {
     donors,
     shops,
-    deleteDonor,
     updateDonor,
     deleteShop,
     addShop,
     updateShop,
+    deleteUserAccount,
   } = useLocalDb();
+  const queryClient = useQueryClient();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [editingDonor, setEditingDonor] = useState<LocalDonor | null>(null);
@@ -62,9 +64,18 @@ export function AdminDashboard() {
   };
 
   const handleDeleteDonor = (id: string) => {
-    if (confirm("Are you sure you want to delete this donor?")) {
-      deleteDonor(id);
-      toast.success("Donor profile deleted.");
+    if (
+      confirm(
+        "Delete this donor's full account, profile, messages, and reports? They must register again to use this app.",
+      )
+    ) {
+      deleteUserAccount(id);
+      queryClient.invalidateQueries({ queryKey: ["donors"] });
+      queryClient.invalidateQueries({ queryKey: ["donors-search"] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["messages"] });
+      queryClient.invalidateQueries({ queryKey: ["reports"] });
+      toast.success("Donor account and profile deleted.");
     }
   };
 

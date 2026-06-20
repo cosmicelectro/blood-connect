@@ -21,16 +21,20 @@ function haversineKm(
 }
 
 export function useAllDonors() {
+  const donors = useLocalDb((state) => state.donors);
   return useQuery({
-    queryKey: ["donors"],
+    queryKey: ["donors", donors],
     queryFn: async () => {
-      const db = useLocalDb.getState();
-      return db.donors.map((d) => ({
+      return donors.map((d) => ({
         id: d.id,
         name: d.name,
         address: d.address,
         phone: d.phone,
         bloodType: d.bloodType,
+        division: d.division,
+        district: d.district,
+        subDistrict: d.subDistrict,
+        area: d.area,
         isAvailable: d.isAvailable,
         lat: d.lat,
         lng: d.lng,
@@ -51,9 +55,12 @@ export function useSearchDonors(
   seekerLng: number,
   enabled: boolean,
 ) {
+  const donors = useLocalDb((state) => state.donors);
+  const hasSeekerLocation = seekerLat !== 0 || seekerLng !== 0;
   return useQuery({
     queryKey: [
       "donors-search",
+      donors,
       bloodType,
       division,
       district,
@@ -64,18 +71,40 @@ export function useSearchDonors(
     ],
     enabled,
     queryFn: async () => {
-      const db = useLocalDb.getState();
-      let list = db.donors.filter((d) => d.isAvailable);
+      let list = donors.filter((d) => d.isAvailable);
 
-      if (bloodType && bloodType !== "All") {
+      if (bloodType && bloodType !== "All" && bloodType !== "all") {
         list = list.filter((d) => d.bloodType === bloodType);
+      }
+      if (division) {
+        list = list.filter(
+          (d) => d.division?.toLowerCase() === division.toLowerCase(),
+        );
+      }
+      if (district) {
+        list = list.filter(
+          (d) => d.district?.toLowerCase() === district.toLowerCase(),
+        );
+      }
+      if (subDistrict) {
+        list = list.filter(
+          (d) => d.subDistrict?.toLowerCase() === subDistrict.toLowerCase(),
+        );
+      }
+      if (area) {
+        list = list.filter((d) =>
+          `${d.area || ""} ${d.address || ""}`
+            .toLowerCase()
+            .includes(area.toLowerCase()),
+        );
       }
 
       const mapped = list.map((d) => {
+        const hasDonorLocation = d.lat !== 0 || d.lng !== 0;
         const dist =
-          seekerLat !== 0 || seekerLng !== 0
+          hasSeekerLocation && hasDonorLocation
             ? haversineKm(seekerLat, seekerLng, d.lat, d.lng)
-            : 0;
+            : null;
 
         let matchScore = 0;
         if (area && d.area?.toLowerCase() === area.toLowerCase())
@@ -103,7 +132,7 @@ export function useSearchDonors(
           isAvailable: d.isAvailable,
           lat: d.lat,
           lng: d.lng,
-          distanceKm: Number(dist.toFixed(1)),
+          distanceKm: dist === null ? 0 : Number(dist.toFixed(1)),
           donationCount: d.donationCount,
           matchScore,
         };
@@ -114,7 +143,7 @@ export function useSearchDonors(
         if (a.matchScore !== b.matchScore) {
           return b.matchScore - a.matchScore;
         }
-        if (seekerLat !== 0 || seekerLng !== 0) {
+        if (hasSeekerLocation) {
           return a.distanceKm - b.distanceKm;
         }
         return 0;

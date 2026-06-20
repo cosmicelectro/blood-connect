@@ -24,6 +24,10 @@ export function ProfilePage() {
       toast.error("New passwords do not match");
       return;
     }
+    if (newPwd.length < 8) {
+      toast.error("Password must be at least 8 characters long");
+      return;
+    }
     try {
       updatePassword(oldPwd, newPwd);
       toast.success("Password updated successfully");
@@ -71,6 +75,7 @@ export function ProfilePage() {
               value={newPwd}
               onChange={(e) => setNewPwd(e.target.value)}
               required
+              minLength={8}
             />
             <button
               type="button"
@@ -94,6 +99,7 @@ export function ProfilePage() {
               value={confirmPwd}
               onChange={(e) => setConfirmPwd(e.target.value)}
               required
+              minLength={8}
             />
             <button
               type="button"
