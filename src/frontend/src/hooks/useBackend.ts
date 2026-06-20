@@ -32,6 +32,65 @@ function hasValidCoordinate(lat: number, lng: number) {
   );
 }
 
+const LEGACY_SYLHET_FALLBACK = { lat: 24.8949, lng: 91.8687 };
+
+const APPROXIMATE_LOCATION_COORDINATES: Record<
+  string,
+  { lat: number; lng: number }
+> = {
+  "sylhet|sylhet|sylhet sadar": { lat: 24.899, lng: 91.871 },
+  "sylhet|habiganj|baniachong": { lat: 24.5167, lng: 91.3579 },
+  "sylhet|sylhet|zakiganj": { lat: 24.8736, lng: 92.3608 },
+  "mymensingh|mymensingh|mymensingh sadar": {
+    lat: 24.7471,
+    lng: 90.4203,
+  },
+  "mymensingh|mymensingh|trishal": { lat: 24.5789, lng: 90.3944 },
+  "mymensingh|jamalpur|jamalpur sadar": { lat: 24.9197, lng: 89.9481 },
+  "mymensingh|netrokona|netrokona sadar": { lat: 24.8835, lng: 90.7274 },
+};
+
+function locationKey(...parts: Array<string | undefined>) {
+  return parts
+    .map((part) => part?.trim().toLowerCase())
+    .filter(Boolean)
+    .join("|");
+}
+
+function isLegacyFallbackCoordinate(lat: number, lng: number) {
+  return (
+    Math.abs(lat - LEGACY_SYLHET_FALLBACK.lat) < 0.0001 &&
+    Math.abs(lng - LEGACY_SYLHET_FALLBACK.lng) < 0.0001
+  );
+}
+
+function resolveDonorCoordinate(donor: {
+  division?: string;
+  district?: string;
+  subDistrict?: string;
+  lat: number;
+  lng: number;
+}) {
+  const approximate =
+    APPROXIMATE_LOCATION_COORDINATES[
+      locationKey(donor.division, donor.district, donor.subDistrict)
+    ];
+
+  if (
+    approximate &&
+    (!hasValidCoordinate(donor.lat, donor.lng) ||
+      isLegacyFallbackCoordinate(donor.lat, donor.lng))
+  ) {
+    return { ...approximate, isApproximate: true };
+  }
+
+  return {
+    lat: donor.lat,
+    lng: donor.lng,
+    isApproximate: false,
+  };
+}
+
 export function useAllDonors() {
   const donors = useLocalDb((state) => state.donors);
   return useQuery({
@@ -112,10 +171,19 @@ export function useSearchDonors(
       }
 
       const mapped = list.map((d) => {
-        const hasDonorLocation = hasValidCoordinate(d.lat, d.lng);
+        const donorCoordinate = resolveDonorCoordinate(d);
+        const hasDonorLocation = hasValidCoordinate(
+          donorCoordinate.lat,
+          donorCoordinate.lng,
+        );
         const dist =
           hasSeekerLocation && hasDonorLocation
-            ? haversineKm(seekerLat, seekerLng, d.lat, d.lng)
+            ? haversineKm(
+                seekerLat,
+                seekerLng,
+                donorCoordinate.lat,
+                donorCoordinate.lng,
+              )
             : null;
 
         let matchScore = 0;
@@ -142,10 +210,11 @@ export function useSearchDonors(
           subDistrict: d.subDistrict,
           area: d.area,
           isAvailable: d.isAvailable,
-          lat: d.lat,
-          lng: d.lng,
-          distanceKm: dist === null ? 0 : Number(dist.toFixed(1)),
+          lat: donorCoordinate.lat,
+          lng: donorCoordinate.lng,
+          distanceKm: dist === null ? 0 : Number(dist.toFixed(2)),
           hasRealDistance: dist !== null,
+          isApproximateDistance: donorCoordinate.isApproximate,
           donationCount: d.donationCount,
           matchScore,
         };
