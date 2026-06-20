@@ -151,18 +151,24 @@ export function useAuth() {
     // Create donor profile automatically if they signed up as a donor
     if (role === "donor") {
       const { addDonor } = useLocalDb.getState();
+      const addressParts = [
+        locationData?.area,
+        locationData?.subDistrict,
+        locationData?.district,
+        locationData?.division,
+      ].filter(Boolean);
       addDonor({
         id: newUser.id,
         name: newUser.name,
         bloodType: "O+", // Default blood type for fast registration
         phone: normalizedMobile,
-        address: locationData?.area || "Sylhet",
-        division: locationData?.division || "Sylhet",
-        district: locationData?.district || "Sylhet",
-        subDistrict: locationData?.subDistrict || "Sylhet Sadar",
-        area: locationData?.area || "Sylhet",
-        lat: locationData?.lat || 24.8949,
-        lng: locationData?.lng || 91.8687,
+        address: addressParts.join(", "),
+        division: locationData?.division || "",
+        district: locationData?.district || "",
+        subDistrict: locationData?.subDistrict || "",
+        area: locationData?.area || "",
+        lat: locationData?.lat ?? 0,
+        lng: locationData?.lng ?? 0,
       });
     }
 

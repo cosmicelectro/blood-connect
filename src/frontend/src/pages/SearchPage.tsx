@@ -42,6 +42,28 @@ type LocationState =
   | { status: "granted"; lat: number; lng: number }
   | { status: "denied"; message: string };
 
+function formatDonorLocation(donor: any) {
+  const structuredParts = [
+    donor.area,
+    donor.subDistrict,
+    donor.district,
+    donor.division,
+  ].filter(Boolean);
+  const structuredLocation = structuredParts.join(", ");
+  const address = donor.address || "";
+
+  if (!structuredLocation) return address;
+  if (!address) return structuredLocation;
+  if (structuredLocation.toLowerCase().includes(address.toLowerCase())) {
+    return structuredLocation;
+  }
+  if (address.toLowerCase().includes(structuredLocation.toLowerCase())) {
+    return address;
+  }
+
+  return `${structuredLocation} - ${address}`;
+}
+
 export function SearchPage() {
   const { language, isLoggedIn, user } = useAuth();
   const { t } = useTranslation();
@@ -376,20 +398,14 @@ export function SearchPage() {
                             </h3>
                             <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                               <MapPin className="h-3 w-3" />{" "}
-                              {[
-                                donor.area,
-                                donor.subDistrict,
-                                donor.district,
-                                donor.division,
-                              ]
-                                .filter(Boolean)
-                                .join(", ")}{" "}
-                              {donor.address ? `- ${donor.address}` : ""}
-                              {hasLocation && donor.distanceKm > 0 && (
-                                <span className="font-bold text-primary font-mono ml-1">
-                                  ({donor.distanceKm} {t("kmAway")})
-                                </span>
-                              )}
+                              {formatDonorLocation(donor)}
+                              {hasLocation &&
+                                donor.hasRealDistance &&
+                                donor.distanceKm > 0 && (
+                                  <span className="font-bold text-primary font-mono ml-1">
+                                    ({donor.distanceKm} {t("kmAway")})
+                                  </span>
+                                )}
                             </p>
                           </div>
                         </div>

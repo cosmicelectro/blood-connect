@@ -20,6 +20,18 @@ function haversineKm(
   return R * c;
 }
 
+function hasValidCoordinate(lat: number, lng: number) {
+  return (
+    Number.isFinite(lat) &&
+    Number.isFinite(lng) &&
+    (lat !== 0 || lng !== 0) &&
+    lat >= -90 &&
+    lat <= 90 &&
+    lng >= -180 &&
+    lng <= 180
+  );
+}
+
 export function useAllDonors() {
   const donors = useLocalDb((state) => state.donors);
   return useQuery({
@@ -56,7 +68,7 @@ export function useSearchDonors(
   enabled: boolean,
 ) {
   const donors = useLocalDb((state) => state.donors);
-  const hasSeekerLocation = seekerLat !== 0 || seekerLng !== 0;
+  const hasSeekerLocation = hasValidCoordinate(seekerLat, seekerLng);
   return useQuery({
     queryKey: [
       "donors-search",
@@ -100,7 +112,7 @@ export function useSearchDonors(
       }
 
       const mapped = list.map((d) => {
-        const hasDonorLocation = d.lat !== 0 || d.lng !== 0;
+        const hasDonorLocation = hasValidCoordinate(d.lat, d.lng);
         const dist =
           hasSeekerLocation && hasDonorLocation
             ? haversineKm(seekerLat, seekerLng, d.lat, d.lng)
@@ -133,6 +145,7 @@ export function useSearchDonors(
           lat: d.lat,
           lng: d.lng,
           distanceKm: dist === null ? 0 : Number(dist.toFixed(1)),
+          hasRealDistance: dist !== null,
           donationCount: d.donationCount,
           matchScore,
         };
@@ -144,6 +157,9 @@ export function useSearchDonors(
           return b.matchScore - a.matchScore;
         }
         if (hasSeekerLocation) {
+          if (a.hasRealDistance !== b.hasRealDistance) {
+            return a.hasRealDistance ? -1 : 1;
+          }
           return a.distanceKm - b.distanceKm;
         }
         return 0;

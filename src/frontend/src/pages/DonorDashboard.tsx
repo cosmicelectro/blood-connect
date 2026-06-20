@@ -94,6 +94,28 @@ function DonorAvatar({ name }: { name: string }) {
   );
 }
 
+function formatProfileLocation(profile: any) {
+  const structuredParts = [
+    profile.area,
+    profile.subDistrict,
+    profile.district,
+    profile.division,
+  ].filter(Boolean);
+  const structuredLocation = structuredParts.join(", ");
+  const address = profile.address || "";
+
+  if (!structuredLocation) return address;
+  if (!address) return structuredLocation;
+  if (structuredLocation.toLowerCase().includes(address.toLowerCase())) {
+    return structuredLocation;
+  }
+  if (address.toLowerCase().includes(structuredLocation.toLowerCase())) {
+    return address;
+  }
+
+  return `${structuredLocation} - ${address}`;
+}
+
 interface EditProfilePanelProps {
   initialId: string;
   initialName: string;
@@ -540,7 +562,7 @@ export function DonorDashboard() {
               <InfoRow
                 icon={<MapPin className="h-4 w-4" />}
                 label="Address"
-                value={`${[profile.area, profile.subDistrict, profile.district, profile.division].filter(Boolean).join(", ")} - ${profile.address}`}
+                value={formatProfileLocation(profile)}
               />
               <InfoRow
                 icon={<Phone className="h-4 w-4" />}

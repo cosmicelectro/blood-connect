@@ -16,6 +16,7 @@ import {
   EyeOff,
   Heart,
   Loader2,
+  LocateFixed,
   Lock,
   Mail,
   ShieldAlert,
@@ -77,15 +78,15 @@ export function AuthPage() {
   const [division, setDivision] = useState("");
   const [district, setDistrict] = useState("");
   const [subDistrict, setSubDistrict] = useState("");
-  const [area, _setArea] = useState("");
+  const [area, setArea] = useState("");
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
-  const [_detectingLocation, setDetectingLocation] = useState(false);
+  const [detectingLocation, setDetectingLocation] = useState(false);
   // Verification flow state
   const [verificationUser, setVerificationUser] = useState(null as any);
   const [verificationCode, setVerificationCode] = useState("");
 
-  const _detectLocation = () => {
+  const detectLocation = () => {
     if (!navigator.geolocation) {
       toast.error("Geolocation not supported.");
       return;
@@ -199,6 +200,12 @@ export function AuthPage() {
         }
         if (password !== confirmPassword) {
           showError("Passwords do not match.");
+          return;
+        }
+        if (role === "donor" && (lat === null || lng === null)) {
+          showError(
+            "Please tap Locate Me and allow location access before registering as a donor.",
+          );
           return;
         }
         const userObj = registerNewProfile(
@@ -525,6 +532,41 @@ export function AuthPage() {
                     ))}
                   </SelectContent>
                 </Select>
+                <Label htmlFor="edit-area">Area / Ward</Label>
+                <Input
+                  id="edit-area"
+                  value={area}
+                  onChange={(e) => setArea(e.target.value)}
+                  placeholder="Road, village, ward, or neighborhood"
+                />
+                {role === "donor" && (
+                  <div className="space-y-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full gap-2"
+                      onClick={detectLocation}
+                      disabled={detectingLocation}
+                    >
+                      {detectingLocation ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <LocateFixed className="h-4 w-4" />
+                      )}
+                      {detectingLocation
+                        ? "Detecting location..."
+                        : lat !== null && lng !== null
+                          ? "Update Real Location"
+                          : "Locate Me"}
+                    </Button>
+                    {lat !== null && lng !== null && (
+                      <p className="rounded-md bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-700">
+                        GPS Latitude/Longitude: {lat.toFixed(4)},{" "}
+                        {lng.toFixed(4)}
+                      </p>
+                    )}
+                  </div>
+                )}
               </>
             )}
 
