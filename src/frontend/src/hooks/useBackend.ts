@@ -20,6 +20,33 @@ function haversineKm(
   return R * c;
 }
 
+async function routeDistanceKm(
+  fromLat: number,
+  fromLng: number,
+  toLat: number,
+  toLng: number,
+) {
+  const url = new URL(
+    `https://router.project-osrm.org/route/v1/driving/${fromLng},${fromLat};${toLng},${toLat}`,
+  );
+  url.searchParams.set("overview", "false");
+  url.searchParams.set("alternatives", "false");
+  url.searchParams.set("steps", "false");
+
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Route distance failed: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const distanceMeters = data?.routes?.[0]?.distance;
+  if (typeof distanceMeters !== "number") {
+    throw new Error("Route distance missing from response.");
+  }
+
+  return distanceMeters / 1000;
+}
+
 function hasValidCoordinate(lat: number, lng: number) {
   return (
     Number.isFinite(lat) &&
@@ -39,8 +66,10 @@ const APPROXIMATE_LOCATION_COORDINATES: Record<
   { lat: number; lng: number }
 > = {
   "sylhet|sylhet|sylhet sadar": { lat: 24.899, lng: 91.871 },
-  "sylhet|habiganj|baniachong": { lat: 24.5167, lng: 91.3579 },
+  "sylhet|habiganj|baniachong": { lat: 24.5186, lng: 91.3558 },
   "sylhet|sylhet|zakiganj": { lat: 24.8736, lng: 92.3608 },
+  "sylhet|sunamganj|dakshin sunamganj": { lat: 24.9343, lng: 91.4102 },
+  "sylhet|sunamganj|shantiganj": { lat: 24.9343, lng: 91.4102 },
   "mymensingh|mymensingh|mymensingh sadar": {
     lat: 24.7471,
     lng: 90.4203,
@@ -170,55 +199,71 @@ export function useSearchDonors(
         );
       }
 
-      const mapped = list.map((d) => {
-        const donorCoordinate = resolveDonorCoordinate(d);
-        const hasDonorLocation = hasValidCoordinate(
-          donorCoordinate.lat,
-          donorCoordinate.lng,
-        );
-        const dist =
-          hasSeekerLocation && hasDonorLocation
-            ? haversineKm(
+      const mapped = await Promise.all(
+        list.map(async (d) => {
+          const donorCoordinate = resolveDonorCoordinate(d);
+          const hasDonorLocation = hasValidCoordinate(
+            donorCoordinate.lat,
+            donorCoordinate.lng,
+          );
+          let dist: number | null = null;
+          let distanceMode: "road" | "straight" | "unknown" = "unknown";
+
+          if (hasSeekerLocation && hasDonorLocation) {
+            try {
+              dist = await routeDistanceKm(
                 seekerLat,
                 seekerLng,
                 donorCoordinate.lat,
                 donorCoordinate.lng,
-              )
-            : null;
+              );
+              distanceMode = "road";
+            } catch {
+              dist = haversineKm(
+                seekerLat,
+                seekerLng,
+                donorCoordinate.lat,
+                donorCoordinate.lng,
+              );
+              distanceMode = "straight";
+            }
+          }
 
-        let matchScore = 0;
-        if (area && d.area?.toLowerCase() === area.toLowerCase())
-          matchScore += 1000;
-        if (
-          subDistrict &&
-          d.subDistrict?.toLowerCase() === subDistrict.toLowerCase()
-        )
-          matchScore += 100;
-        if (district && d.district?.toLowerCase() === district.toLowerCase())
-          matchScore += 10;
-        if (division && d.division?.toLowerCase() === division.toLowerCase())
-          matchScore += 1;
+          let matchScore = 0;
+          if (area && d.area?.toLowerCase() === area.toLowerCase())
+            matchScore += 1000;
+          if (
+            subDistrict &&
+            d.subDistrict?.toLowerCase() === subDistrict.toLowerCase()
+          )
+            matchScore += 100;
+          if (district && d.district?.toLowerCase() === district.toLowerCase())
+            matchScore += 10;
+          if (division && d.division?.toLowerCase() === division.toLowerCase())
+            matchScore += 1;
 
-        return {
-          id: d.id,
-          name: d.name,
-          address: d.address,
-          phone: d.phone,
-          bloodType: d.bloodType,
-          division: d.division,
-          district: d.district,
-          subDistrict: d.subDistrict,
-          area: d.area,
-          isAvailable: d.isAvailable,
-          lat: donorCoordinate.lat,
-          lng: donorCoordinate.lng,
-          distanceKm: dist === null ? 0 : Number(dist.toFixed(2)),
-          hasRealDistance: dist !== null,
-          isApproximateDistance: donorCoordinate.isApproximate,
-          donationCount: d.donationCount,
-          matchScore,
-        };
-      });
+          return {
+            id: d.id,
+            name: d.name,
+            address: d.address,
+            phone: d.phone,
+            bloodType: d.bloodType,
+            division: d.division,
+            district: d.district,
+            subDistrict: d.subDistrict,
+            area: d.area,
+            isAvailable: d.isAvailable,
+            lat: donorCoordinate.lat,
+            lng: donorCoordinate.lng,
+            distanceKm: dist === null ? 0 : Number(dist.toFixed(2)),
+            hasRealDistance: dist !== null,
+            distanceMode,
+            isApproximateDistance: donorCoordinate.isApproximate,
+            donationCount: d.donationCount,
+            matchScore,
+          };
+        }),
+      );
 
       // Sort by match score first (descending), then by distance (ascending)
       mapped.sort((a, b) => {

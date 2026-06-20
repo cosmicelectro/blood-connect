@@ -404,6 +404,9 @@ export function SearchPage() {
                                 donor.distanceKm > 0 && (
                                   <span className="font-bold text-primary font-mono ml-1">
                                     ({donor.distanceKm} {t("kmAway")})
+                                    {donor.distanceMode === "straight"
+                                      ? " direct"
+                                      : ""}
                                   </span>
                                 )}
                             </p>

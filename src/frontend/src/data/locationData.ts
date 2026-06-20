@@ -596,6 +596,7 @@ export const SUBDISTRICTS_BY_DISTRICT: Record<string, string[]> = {
     "Bishwamvarpur",
     "Chhatak",
     "Dakshin Sunamganj",
+    "Shantiganj",
     "Derai",
     "Dharamapasha",
     "Dowarabazar",
