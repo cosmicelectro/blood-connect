@@ -33,6 +33,13 @@ import {
   SUBDISTRICTS_BY_DISTRICT,
 } from "../data/locationData";
 import { useAuth } from "../hooks/useAuth";
+import { useLocalDb } from "../hooks/useLocalDb";
+import {
+  getLastSharedStateError,
+  loadSharedState,
+  saveSharedState,
+  toSharedSnapshot,
+} from "../lib/remoteStore";
 
 export function AuthPage() {
   const navigate = useNavigate();
@@ -117,7 +124,40 @@ export function AuthPage() {
     toast.error(message);
   };
 
-  const submitCredentials = () => {
+  const refreshSharedState = async () => {
+    const record = await loadSharedState();
+    if (record) {
+      useLocalDb.getState().replaceSharedState(record.snapshot);
+      return true;
+    }
+
+    const syncError = getLastSharedStateError();
+    if (syncError) {
+      showError(
+        `Shared database could not be loaded: ${syncError}. Please check Supabase setup/deployment.`,
+      );
+      return false;
+    }
+
+    return true;
+  };
+
+  const saveCurrentSharedState = async () => {
+    const saved = await saveSharedState(
+      toSharedSnapshot(useLocalDb.getState()),
+    );
+    if (saved) return true;
+
+    const syncError = getLastSharedStateError();
+    showError(
+      syncError
+        ? `Profile could not be saved to the shared database: ${syncError}`
+        : "Profile could not be saved to the shared database. Please try again.",
+    );
+    return false;
+  };
+
+  const submitCredentials = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
     setFormMessage(null);
@@ -132,7 +172,11 @@ export function AuthPage() {
     }
 
     try {
+      const syncReady = await refreshSharedState();
+      if (!syncReady) return;
+
       if (isSignUp) {
+        const previousSharedState = toSharedSnapshot(useLocalDb.getState());
         if (!trimmedName) {
           showError("Full name is required.");
           return;
@@ -172,6 +216,13 @@ export function AuthPage() {
             lng: lng ?? undefined,
           },
         );
+
+        const saved = await saveCurrentSharedState();
+        if (!saved) {
+          useLocalDb.getState().replaceSharedState(previousSharedState);
+          useLocalDb.getState().setCurrentUser(null);
+          return;
+        }
 
         const message = `Success! Registered and logged in as ${userObj.name}`;
         setFormMessage({ type: "success", text: message });
@@ -494,7 +545,7 @@ export function AuthPage() {
               disabled={isSubmitting}
               onClick={(e) => {
                 e.preventDefault();
-                submitCredentials();
+                void submitCredentials();
               }}
             >
               {isSubmitting

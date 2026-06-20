@@ -7,7 +7,6 @@ export function useAuth() {
     currentUser,
     setCurrentUser,
     registerUser,
-    users,
     language,
     theme,
     setLanguage,
@@ -26,7 +25,7 @@ export function useAuth() {
     const userEmail = email?.trim()
       ? email
       : `oauth-${defaultRole}@${provider}.com`;
-    const safeUsers = users || [];
+    const safeUsers = useLocalDb.getState().users || [];
     let user = safeUsers.find((u) => u && u.email === userEmail);
     if (!user) {
       user = registerUser(
@@ -43,7 +42,7 @@ export function useAuth() {
 
   const loginWithCredentials = (email: string, password?: string) => {
     const normalizedEmail = email.trim().toLowerCase();
-    const safeUsers = users || [];
+    const safeUsers = useLocalDb.getState().users || [];
     let user = safeUsers.find(
       (u) =>
         u &&
@@ -121,7 +120,7 @@ export function useAuth() {
       lng?: number;
     },
   ) => {
-    const safeUsers = users || [];
+    const safeUsers = useLocalDb.getState().users || [];
     const normalizedEmail = email.trim().toLowerCase();
     const normalizedMobile = normalizeMobile(mobile);
     if (!normalizedMobile) {

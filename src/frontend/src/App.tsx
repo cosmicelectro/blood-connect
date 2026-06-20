@@ -168,7 +168,11 @@ export default function App() {
           useLocalDb.getState().replaceSharedState(record.snapshot);
         } else {
           lastLocalSaveAt = Date.now();
-          saveSharedState(toSharedSnapshot(useLocalDb.getState()));
+          saveSharedState(toSharedSnapshot(useLocalDb.getState())).then(
+            (saved) => {
+              if (saved) lastRemoteUpdatedAt = new Date().toISOString();
+            },
+          );
         }
       })
       .finally(() => {
@@ -182,7 +186,9 @@ export default function App() {
 
       saveTimer = setTimeout(() => {
         lastLocalSaveAt = Date.now();
-        saveSharedState(toSharedSnapshot(state));
+        saveSharedState(toSharedSnapshot(state)).then((saved) => {
+          if (saved) lastRemoteUpdatedAt = new Date().toISOString();
+        });
       }, 400);
     });
 
