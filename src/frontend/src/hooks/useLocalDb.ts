@@ -32,6 +32,8 @@ export interface LocalDonor {
   lat: number;
   lng: number;
   isAvailable: boolean;
+  isVerified?: boolean;
+  isHidden?: boolean;
   lastDonationDate?: number; // millisecond timestamp
   donationCount: number;
 }
@@ -64,12 +66,45 @@ export interface FeedbackReport {
   timestamp: number;
 }
 
+export interface BloodRequest {
+  id: string;
+  requesterId: string;
+  requesterName: string;
+  bloodType: string;
+  units: number;
+  hospital: string;
+  phone: string;
+  note?: string;
+  division: string;
+  district: string;
+  subDistrict: string;
+  area?: string;
+  lat: number;
+  lng: number;
+  urgency: "critical" | "urgent" | "standard";
+  status: "open" | "matched" | "closed";
+  createdAt: number;
+  neededBy: number;
+}
+
+export interface AuditLog {
+  id: string;
+  actorId: string;
+  actorName: string;
+  action: string;
+  targetType: "user" | "donor" | "shop" | "request" | "report";
+  targetId: string;
+  timestamp: number;
+}
+
 export interface LocalDbState {
   users: LocalUser[];
   donors: LocalDonor[];
   shops: LocalShop[];
   messages: ChatMessage[];
   reports: FeedbackReport[];
+  bloodRequests: BloodRequest[];
+  auditLogs: AuditLog[];
   currentUser: LocalUser | null;
   language: "en" | "bn";
   theme: "light" | "dark";
@@ -92,13 +127,28 @@ export interface LocalDbState {
   updateUserRole: (userId: string, newRole: LocalUser["role"]) => void;
   deleteUserAccount: (userId: string) => void;
   verifyUser: (userId: string) => void;
+  addAuditLog: (
+    entry: Omit<AuditLog, "id" | "timestamp" | "actorId" | "actorName">,
+  ) => void;
 
   // Donor actions
   addDonor: (donor: Omit<LocalDonor, "isAvailable" | "donationCount">) => void;
   updateDonor: (id: string, donor: Partial<LocalDonor>) => void;
   deleteDonor: (id: string) => void;
+  verifyDonor: (id: string) => void;
+  hideDonor: (id: string, hidden: boolean) => void;
   logDonation: (id: string, date?: number) => void;
   checkAvailability: () => void;
+
+  // Blood request actions
+  createBloodRequest: (
+    request: Omit<BloodRequest, "id" | "createdAt" | "status">,
+  ) => BloodRequest;
+  updateBloodRequestStatus: (
+    requestId: string,
+    status: BloodRequest["status"],
+  ) => void;
+  deleteBloodRequest: (requestId: string) => void;
 
   // Shop actions
   addShop: (shop: Omit<LocalShop, "id">) => void;
@@ -129,7 +179,16 @@ export interface LocalDbState {
   deleteReport: (reportId: string) => void;
   replaceSharedState: (
     snapshot: Partial<
-      Pick<LocalDbState, "users" | "donors" | "shops" | "messages" | "reports">
+      Pick<
+        LocalDbState,
+        | "users"
+        | "donors"
+        | "shops"
+        | "messages"
+        | "reports"
+        | "bloodRequests"
+        | "auditLogs"
+      >
     >,
   ) => void;
   resetStore: () => void;
@@ -216,6 +275,8 @@ export const useLocalDb = create<LocalDbState>()(
       ],
       messages: [],
       reports: [],
+      bloodRequests: [],
+      auditLogs: [],
       currentUser: null,
       language: "en",
       theme: "light",
@@ -237,6 +298,8 @@ export const useLocalDb = create<LocalDbState>()(
           shops: [],
           messages: [],
           reports: [],
+          bloodRequests: [],
+          auditLogs: [],
           currentUser: null,
         }),
       updatePassword: (userId: string, newPassword: string) =>
@@ -313,14 +376,48 @@ export const useLocalDb = create<LocalDbState>()(
             (m) => m.senderId !== userId && m.receiverId !== userId,
           ),
           reports: state.reports.filter((r) => r.userId !== userId),
+          bloodRequests: state.bloodRequests.filter(
+            (r) => r.requesterId !== userId,
+          ),
+          auditLogs: [
+            ...state.auditLogs,
+            {
+              id: `audit-${Math.random().toString(36).substring(2, 9)}`,
+              actorId: state.currentUser?.id || "system",
+              actorName: state.currentUser?.name || "System",
+              action: "Deleted full user account",
+              targetType: "user" as const,
+              targetId: userId,
+              timestamp: Date.now(),
+            },
+          ],
           currentUser:
             state.currentUser?.id === userId ? null : state.currentUser,
+        })),
+      addAuditLog: (entry) =>
+        set((state) => ({
+          auditLogs: [
+            {
+              id: `audit-${Math.random().toString(36).substring(2, 9)}`,
+              actorId: state.currentUser?.id || "system",
+              actorName: state.currentUser?.name || "System",
+              timestamp: Date.now(),
+              ...entry,
+            },
+            ...state.auditLogs,
+          ].slice(0, 100),
         })),
       addDonor: (donor) =>
         set((state) => ({
           donors: [
             ...state.donors,
-            { ...donor, isAvailable: true, donationCount: 0 },
+            {
+              ...donor,
+              isAvailable: true,
+              isVerified: false,
+              isHidden: false,
+              donationCount: 0,
+            },
           ],
         })),
       updateDonor: (id, updatedFields) =>
@@ -340,6 +437,102 @@ export const useLocalDb = create<LocalDbState>()(
             donors: state.donors.filter((d) => d.id !== id),
           };
         }),
+      verifyDonor: (id) =>
+        set((state) => ({
+          donors: state.donors.map((d) =>
+            d.id === id ? { ...d, isVerified: true, isHidden: false } : d,
+          ),
+          auditLogs: [
+            {
+              id: `audit-${Math.random().toString(36).substring(2, 9)}`,
+              actorId: state.currentUser?.id || "system",
+              actorName: state.currentUser?.name || "System",
+              action: "Verified donor profile",
+              targetType: "donor" as const,
+              targetId: id,
+              timestamp: Date.now(),
+            },
+            ...state.auditLogs,
+          ].slice(0, 100),
+        })),
+      hideDonor: (id, hidden) =>
+        set((state) => ({
+          donors: state.donors.map((d) =>
+            d.id === id ? { ...d, isHidden: hidden } : d,
+          ),
+          auditLogs: [
+            {
+              id: `audit-${Math.random().toString(36).substring(2, 9)}`,
+              actorId: state.currentUser?.id || "system",
+              actorName: state.currentUser?.name || "System",
+              action: hidden
+                ? "Hidden donor profile"
+                : "Restored donor profile",
+              targetType: "donor" as const,
+              targetId: id,
+              timestamp: Date.now(),
+            },
+            ...state.auditLogs,
+          ].slice(0, 100),
+        })),
+      createBloodRequest: (request) => {
+        const newRequest: BloodRequest = {
+          ...request,
+          id: `req-${Math.random().toString(36).substring(2, 9)}`,
+          status: "open",
+          createdAt: Date.now(),
+        };
+        set((state) => ({
+          bloodRequests: [newRequest, ...state.bloodRequests],
+          auditLogs: [
+            {
+              id: `audit-${Math.random().toString(36).substring(2, 9)}`,
+              actorId: state.currentUser?.id || request.requesterId,
+              actorName: state.currentUser?.name || request.requesterName,
+              action: "Created urgent blood request",
+              targetType: "request" as const,
+              targetId: newRequest.id,
+              timestamp: Date.now(),
+            },
+            ...state.auditLogs,
+          ].slice(0, 100),
+        }));
+        return newRequest;
+      },
+      updateBloodRequestStatus: (requestId, status) =>
+        set((state) => ({
+          bloodRequests: state.bloodRequests.map((r) =>
+            r.id === requestId ? { ...r, status } : r,
+          ),
+          auditLogs: [
+            {
+              id: `audit-${Math.random().toString(36).substring(2, 9)}`,
+              actorId: state.currentUser?.id || "system",
+              actorName: state.currentUser?.name || "System",
+              action: `Marked blood request ${status}`,
+              targetType: "request" as const,
+              targetId: requestId,
+              timestamp: Date.now(),
+            },
+            ...state.auditLogs,
+          ].slice(0, 100),
+        })),
+      deleteBloodRequest: (requestId) =>
+        set((state) => ({
+          bloodRequests: state.bloodRequests.filter((r) => r.id !== requestId),
+          auditLogs: [
+            {
+              id: `audit-${Math.random().toString(36).substring(2, 9)}`,
+              actorId: state.currentUser?.id || "system",
+              actorName: state.currentUser?.name || "System",
+              action: "Deleted blood request",
+              targetType: "request" as const,
+              targetId: requestId,
+              timestamp: Date.now(),
+            },
+            ...state.auditLogs,
+          ].slice(0, 100),
+        })),
       deleteShop: (id) =>
         set((state) => {
           const currentUser = state.currentUser;
@@ -499,6 +692,12 @@ export const useLocalDb = create<LocalDbState>()(
           reports: Array.isArray(snapshot.reports)
             ? snapshot.reports
             : state.reports,
+          bloodRequests: Array.isArray(snapshot.bloodRequests)
+            ? snapshot.bloodRequests
+            : state.bloodRequests,
+          auditLogs: Array.isArray(snapshot.auditLogs)
+            ? snapshot.auditLogs
+            : state.auditLogs,
           currentUser: state.currentUser,
           language: state.language,
           theme: state.theme,
@@ -526,6 +725,12 @@ export const useLocalDb = create<LocalDbState>()(
         merged.reports = Array.isArray(merged.reports)
           ? merged.reports
           : currentState.reports;
+        merged.bloodRequests = Array.isArray(merged.bloodRequests)
+          ? merged.bloodRequests
+          : currentState.bloodRequests;
+        merged.auditLogs = Array.isArray(merged.auditLogs)
+          ? merged.auditLogs
+          : currentState.auditLogs;
 
         // Validate currentUser to avoid crashes with partial/corrupted user objects
         if (

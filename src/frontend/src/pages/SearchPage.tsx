@@ -12,6 +12,7 @@ import {
   AlertTriangle,
   ArrowRight,
   Calendar,
+  CheckCircle2,
   Droplets,
   Heart,
   LocateFixed,
@@ -32,8 +33,11 @@ import { ErrorMessage } from "../components/ErrorMessage";
 import { useAuth } from "../hooks/useAuth";
 import {
   useAllDonors,
+  useBloodRequests,
   useCheckAvailability,
+  useCreateBloodRequest,
   useSearchDonors,
+  useUpdateBloodRequestStatus,
 } from "../hooks/useBackend";
 
 type LocationState =
@@ -80,6 +84,14 @@ export function SearchPage() {
     status: "idle",
   });
   const [searchTriggered, setSearchTriggered] = useState(false);
+  const [requestForm, setRequestForm] = useState({
+    bloodType: "O+",
+    units: 1,
+    hospital: "",
+    phone: "",
+    note: "",
+    urgency: "urgent" as "critical" | "urgent" | "standard",
+  });
 
   // Messaging Dialog State
   const [chatTarget, setChatTarget] = useState<{
@@ -89,6 +101,9 @@ export function SearchPage() {
 
   const checkAvailability = useCheckAvailability();
   const mutateAvailability = checkAvailability.mutate;
+  const createBloodRequest = useCreateBloodRequest();
+  const updateRequestStatus = useUpdateBloodRequestStatus();
+  const { data: bloodRequests = [] } = useBloodRequests();
 
   useEffect(() => {
     mutateAvailability();
@@ -190,6 +205,46 @@ export function SearchPage() {
     setSearchTriggered(false);
   }
 
+  async function handleCreateRequest(e: React.FormEvent) {
+    e.preventDefault();
+    if (!requestForm.hospital.trim() || !requestForm.phone.trim()) {
+      toast.error("Hospital and phone number are required.");
+      return;
+    }
+    if (!hasLocation) {
+      toast.error("Tap Locate Me before posting an urgent request.");
+      return;
+    }
+
+    const request = await createBloodRequest.mutateAsync({
+      requesterId: user?.id || "guest",
+      requesterName: user?.name || "Guest seeker",
+      bloodType: requestForm.bloodType,
+      units: requestForm.units,
+      hospital: requestForm.hospital.trim(),
+      phone: requestForm.phone.trim(),
+      note: requestForm.note.trim() || undefined,
+      division: division || "Nearby",
+      district: district || "Current location",
+      subDistrict,
+      area,
+      lat: locationState.lat,
+      lng: locationState.lng,
+      urgency: requestForm.urgency,
+      neededBy: Date.now() + 6 * 60 * 60 * 1000,
+    });
+
+    toast.success(`Emergency request posted for ${request.bloodType}.`);
+    setRequestForm({
+      bloodType: "O+",
+      units: 1,
+      hospital: "",
+      phone: "",
+      note: "",
+      urgency: "urgent",
+    });
+  }
+
   const getDonationBadge = (count: number) => {
     if (count >= 5)
       return { label: t("levelHero"), color: "bg-red-500 text-white" };
@@ -203,18 +258,47 @@ export function SearchPage() {
       className="min-h-screen bg-background text-foreground"
       data-ocid="search.page"
     >
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-primary py-12 text-primary-foreground">
-        <div className="mx-auto max-w-6xl px-4 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 shadow-inner">
-            <Droplets className="h-8 w-8 text-primary-foreground animate-bounce" />
+      <section className="border-b border-border bg-card">
+        <div className="mx-auto grid max-w-6xl gap-5 px-4 py-8 md:grid-cols-[1.4fr_0.9fr] md:items-center">
+          <div>
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-primary">
+              <Droplets className="h-3.5 w-3.5" />
+              Verified emergency network
+            </div>
+            <h1 className="font-display text-3xl font-extrabold tracking-tight md:text-4xl">
+              {t("findDonors")}
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+              {t("findDonorsSub")} Post urgent requests, compare road distance,
+              and contact available donors faster.
+            </p>
           </div>
-          <h1 className="text-4xl font-display font-extrabold tracking-tight">
-            {t("findDonors")}
-          </h1>
-          <p className="mx-auto mt-2 max-w-lg text-sm opacity-90">
-            {t("findDonorsSub")}
-          </p>
+          <div className="grid grid-cols-3 gap-2 rounded-xl border border-border bg-background p-3">
+            <div>
+              <p className="text-2xl font-bold text-primary">
+                {(allDonors || []).filter((d) => d.isAvailable).length}
+              </p>
+              <p className="text-[10px] font-semibold uppercase text-muted-foreground">
+                Ready donors
+              </p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-primary">
+                {bloodRequests.filter((r) => r.status === "open").length}
+              </p>
+              <p className="text-[10px] font-semibold uppercase text-muted-foreground">
+                Open requests
+              </p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-primary">
+                {(allDonors || []).filter((d) => d.isVerified).length}
+              </p>
+              <p className="text-[10px] font-semibold uppercase text-muted-foreground">
+                Verified
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -337,6 +421,91 @@ export function SearchPage() {
                   {t("search")}
                 </Button>
               </div>
+
+              <form
+                onSubmit={handleCreateRequest}
+                className="space-y-3 rounded-lg border border-primary/20 bg-primary/5 p-3"
+              >
+                <div>
+                  <h3 className="text-sm font-bold">Post urgent request</h3>
+                  <p className="text-[11px] text-muted-foreground">
+                    Uses your detected GPS location.
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <select
+                    className="rounded-md border border-border bg-card p-2 text-xs"
+                    value={requestForm.bloodType}
+                    onChange={(e) =>
+                      setRequestForm({
+                        ...requestForm,
+                        bloodType: e.target.value,
+                      })
+                    }
+                  >
+                    {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map(
+                      (bt) => (
+                        <option key={bt} value={bt}>
+                          {bt}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                  <input
+                    type="number"
+                    min={1}
+                    max={10}
+                    className="rounded-md border border-border bg-card p-2 text-xs"
+                    value={requestForm.units}
+                    onChange={(e) =>
+                      setRequestForm({
+                        ...requestForm,
+                        units: Number(e.target.value) || 1,
+                      })
+                    }
+                  />
+                </div>
+                <input
+                  className="w-full rounded-md border border-border bg-card p-2 text-xs"
+                  placeholder="Hospital / clinic"
+                  value={requestForm.hospital}
+                  onChange={(e) =>
+                    setRequestForm({
+                      ...requestForm,
+                      hospital: e.target.value,
+                    })
+                  }
+                />
+                <input
+                  className="w-full rounded-md border border-border bg-card p-2 text-xs"
+                  placeholder="Contact phone"
+                  value={requestForm.phone}
+                  onChange={(e) =>
+                    setRequestForm({ ...requestForm, phone: e.target.value })
+                  }
+                />
+                <select
+                  className="w-full rounded-md border border-border bg-card p-2 text-xs"
+                  value={requestForm.urgency}
+                  onChange={(e) =>
+                    setRequestForm({
+                      ...requestForm,
+                      urgency: e.target.value as any,
+                    })
+                  }
+                >
+                  <option value="critical">Critical now</option>
+                  <option value="urgent">Urgent today</option>
+                  <option value="standard">Standard</option>
+                </select>
+                <Button
+                  type="submit"
+                  className="w-full text-xs"
+                  disabled={createBloodRequest.isPending}
+                >
+                  Post Request
+                </Button>
+              </form>
             </div>
 
             {/* Donor List View */}
@@ -389,6 +558,9 @@ export function SearchPage() {
                           <div className="min-w-0">
                             <h3 className="font-bold flex items-center gap-1.5 text-base text-foreground">
                               {donor.name}
+                              {donor.isVerified && (
+                                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                              )}
                               {isClosest && (
                                 <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-primary text-primary-foreground flex items-center gap-0.5">
                                   <Heart className="h-2.5 w-2.5 animate-pulse" />{" "}
@@ -409,6 +581,17 @@ export function SearchPage() {
                                       : ""}
                                   </span>
                                 )}
+                            </p>
+                            <p className="mt-1 text-[10px] text-muted-foreground">
+                              {donor.isVerified
+                                ? "Verified donor"
+                                : "Awaiting admin verification"}{" "}
+                              ·{" "}
+                              {donor.distanceMode === "road"
+                                ? "Road distance"
+                                : donor.distanceMode === "straight"
+                                  ? "Direct distance fallback"
+                                  : "Distance pending"}
                             </p>
                           </div>
                         </div>
@@ -448,6 +631,56 @@ export function SearchPage() {
                       </div>
                     );
                   })}
+                </div>
+              )}
+
+              {bloodRequests.length > 0 && (
+                <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <h2 className="text-sm font-bold">Active Blood Requests</h2>
+                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                      {bloodRequests.filter((r) => r.status === "open").length}{" "}
+                      open
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {bloodRequests.slice(0, 4).map((request) => (
+                      <div
+                        key={request.id}
+                        className="flex items-center justify-between gap-3 rounded-lg border border-border p-3"
+                      >
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="rounded-md bg-primary/10 px-2 py-1 font-mono text-sm font-bold text-primary">
+                              {request.bloodType}
+                            </span>
+                            <span className="truncate text-sm font-semibold">
+                              {request.hospital}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {request.units} unit(s) · {request.urgency} ·{" "}
+                            {request.phone}
+                          </p>
+                        </div>
+                        {request.requesterId === user?.id && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              updateRequestStatus.mutate({
+                                requestId: request.id,
+                                status:
+                                  request.status === "open" ? "closed" : "open",
+                              })
+                            }
+                          >
+                            {request.status === "open" ? "Close" : "Reopen"}
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

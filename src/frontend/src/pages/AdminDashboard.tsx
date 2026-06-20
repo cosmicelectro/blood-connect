@@ -8,6 +8,8 @@ import {
   Calendar,
   CheckCircle,
   Edit,
+  Eye,
+  EyeOff,
   HeartPulse,
   MessageSquareWarning,
   Plus,
@@ -18,7 +20,13 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useDeleteReport, useReports } from "../hooks/useBackend";
+import {
+  useAuditLogs,
+  useBloodRequests,
+  useDeleteReport,
+  useReports,
+  useUpdateBloodRequestStatus,
+} from "../hooks/useBackend";
 import {
   type LocalDonor,
   type LocalShop,
@@ -38,6 +46,8 @@ export function AdminDashboard() {
     addShop,
     updateShop,
     deleteUserAccount,
+    verifyDonor,
+    hideDonor,
   } = useLocalDb();
   const queryClient = useQueryClient();
 
@@ -46,7 +56,10 @@ export function AdminDashboard() {
   const [editingShop, setEditingShop] = useState<LocalShop | null>(null);
 
   const { data: reports = [] } = useReports();
+  const { data: bloodRequests = [] } = useBloodRequests();
+  const { data: auditLogs = [] } = useAuditLogs();
   const deleteReport = useDeleteReport();
+  const updateRequestStatus = useUpdateBloodRequestStatus();
 
   const [newShopForm, setNewShopForm] = useState({
     name: "",
@@ -57,10 +70,27 @@ export function AdminDashboard() {
   });
 
   const availableDonorsCount = donors.filter((d) => d.isAvailable).length;
+  const reviewQueueCount = donors.filter(
+    (d) => !d.isVerified || d.isHidden,
+  ).length;
 
   const handleToggleDonorAvailability = (id: string, current: boolean) => {
     updateDonor(id, { isAvailable: !current });
     toast.success("Donor availability updated!");
+  };
+
+  const handleVerifyDonor = (id: string) => {
+    verifyDonor(id);
+    queryClient.invalidateQueries({ queryKey: ["donors"] });
+    toast.success("Donor verified.");
+  };
+
+  const handleHideDonor = (id: string, hidden: boolean) => {
+    hideDonor(id, hidden);
+    queryClient.invalidateQueries({ queryKey: ["donors"] });
+    toast.success(
+      hidden ? "Donor hidden from public search." : "Donor restored.",
+    );
   };
 
   const handleDeleteDonor = (id: string) => {
@@ -157,6 +187,10 @@ export function AdminDashboard() {
       </div>
 
       {/* ── Stats Grid ── */}
+      <p className="-mt-6 text-xs font-semibold text-primary">
+        {reviewQueueCount} donor profile(s) need review or are hidden.
+      </p>
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-border bg-card p-5 shadow-sm flex items-center gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -258,6 +292,22 @@ export function AdminDashboard() {
                         <div className="text-xs font-normal text-muted-foreground">
                           {donor.address}
                         </div>
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                              donor.isVerified
+                                ? "bg-blue-500/10 text-blue-600"
+                                : "bg-amber-500/10 text-amber-600"
+                            }`}
+                          >
+                            {donor.isVerified ? "Verified" : "Needs review"}
+                          </span>
+                          {donor.isHidden && (
+                            <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
+                              Hidden
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-3 text-center">
                         <span className="bg-primary/10 text-primary font-mono font-bold px-2 py-0.5 rounded text-xs">
@@ -290,6 +340,32 @@ export function AdminDashboard() {
                         </button>
                       </td>
                       <td className="py-3 text-right space-x-2">
+                        {!donor.isVerified && (
+                          <button
+                            type="button"
+                            onClick={() => handleVerifyDonor(donor.id)}
+                            className="text-emerald-600 hover:text-emerald-700"
+                            title="Verify donor"
+                          >
+                            <CheckCircle className="h-4 w-4 inline" />
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleHideDonor(donor.id, !donor.isHidden)
+                          }
+                          className="text-muted-foreground hover:text-foreground"
+                          title={
+                            donor.isHidden ? "Restore donor" : "Hide donor"
+                          }
+                        >
+                          {donor.isHidden ? (
+                            <Eye className="h-4 w-4 inline" />
+                          ) : (
+                            <EyeOff className="h-4 w-4 inline" />
+                          )}
+                        </button>
                         <button
                           type="button"
                           onClick={() => setEditingDonor(donor)}
@@ -321,6 +397,51 @@ export function AdminDashboard() {
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="text-xl font-bold font-display flex items-center gap-2 mb-4">
+              <HeartPulse className="h-5 w-5 text-primary" />
+              Blood Requests
+            </h2>
+            <div className="space-y-3">
+              {bloodRequests.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No blood requests yet.
+                </p>
+              ) : (
+                bloodRequests.slice(0, 6).map((request) => (
+                  <div
+                    key={request.id}
+                    className="flex items-center justify-between gap-3 rounded-lg border border-border p-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold">
+                        {request.bloodType} · {request.hospital}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {request.units} unit(s), {request.urgency},{" "}
+                        {request.phone}
+                      </p>
+                    </div>
+                    <select
+                      className="rounded-md border border-border bg-card p-2 text-xs"
+                      value={request.status}
+                      onChange={(e) =>
+                        updateRequestStatus.mutate({
+                          requestId: request.id,
+                          status: e.target.value as any,
+                        })
+                      }
+                    >
+                      <option value="open">Open</option>
+                      <option value="matched">Matched</option>
+                      <option value="closed">Closed</option>
+                    </select>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
@@ -515,6 +636,32 @@ export function AdminDashboard() {
                         {isBn ? "সমাধান / বাতিল করুন" : "Resolve / Dismiss"}
                       </Button>
                     </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="text-lg font-bold font-display mb-4">
+              Recent Audit Log
+            </h2>
+            <div className="space-y-3">
+              {auditLogs.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No admin actions recorded yet.
+                </p>
+              ) : (
+                auditLogs.slice(0, 8).map((entry) => (
+                  <div
+                    key={entry.id}
+                    className="rounded-lg border border-border p-3 text-xs"
+                  >
+                    <p className="font-semibold">{entry.action}</p>
+                    <p className="mt-1 text-muted-foreground">
+                      {entry.actorName} ·{" "}
+                      {new Date(entry.timestamp).toLocaleString()}
+                    </p>
                   </div>
                 ))
               )}

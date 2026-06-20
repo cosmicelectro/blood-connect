@@ -125,22 +125,26 @@ export function useAllDonors() {
   return useQuery({
     queryKey: ["donors", donors],
     queryFn: async () => {
-      return donors.map((d) => ({
-        id: d.id,
-        name: d.name,
-        address: d.address,
-        phone: d.phone,
-        bloodType: d.bloodType,
-        division: d.division,
-        district: d.district,
-        subDistrict: d.subDistrict,
-        area: d.area,
-        isAvailable: d.isAvailable,
-        lat: d.lat,
-        lng: d.lng,
-        distanceKm: 0,
-        donationCount: d.donationCount,
-      }));
+      return donors
+        .filter((d) => !d.isHidden)
+        .map((d) => ({
+          id: d.id,
+          name: d.name,
+          address: d.address,
+          phone: d.phone,
+          bloodType: d.bloodType,
+          division: d.division,
+          district: d.district,
+          subDistrict: d.subDistrict,
+          area: d.area,
+          isAvailable: d.isAvailable,
+          isVerified: d.isVerified,
+          isHidden: d.isHidden,
+          lat: d.lat,
+          lng: d.lng,
+          distanceKm: 0,
+          donationCount: d.donationCount,
+        }));
     },
   });
 }
@@ -171,7 +175,7 @@ export function useSearchDonors(
     ],
     enabled,
     queryFn: async () => {
-      let list = donors.filter((d) => d.isAvailable);
+      let list = donors.filter((d) => d.isAvailable && !d.isHidden);
 
       if (bloodType && bloodType !== "All" && bloodType !== "all") {
         list = list.filter((d) => d.bloodType === bloodType);
@@ -253,6 +257,8 @@ export function useSearchDonors(
             subDistrict: d.subDistrict,
             area: d.area,
             isAvailable: d.isAvailable,
+            isVerified: d.isVerified,
+            isHidden: d.isHidden,
             lat: donorCoordinate.lat,
             lng: donorCoordinate.lng,
             distanceKm: dist === null ? 0 : Number(dist.toFixed(2)),
@@ -602,6 +608,57 @@ export function useReports() {
       const db = useLocalDb.getState();
       return db.reports;
     },
+  });
+}
+
+export function useBloodRequests() {
+  const bloodRequests = useLocalDb((state) => state.bloodRequests);
+  return useQuery({
+    queryKey: ["blood-requests", bloodRequests],
+    queryFn: async () =>
+      [...bloodRequests].sort((a, b) => {
+        const urgencyOrder = { critical: 0, urgent: 1, standard: 2 };
+        if (a.status !== b.status) return a.status === "open" ? -1 : 1;
+        if (a.urgency !== b.urgency) {
+          return urgencyOrder[a.urgency] - urgencyOrder[b.urgency];
+        }
+        return b.createdAt - a.createdAt;
+      }),
+  });
+}
+
+export function useCreateBloodRequest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: any) => {
+      const db = useLocalDb.getState();
+      return db.createBloodRequest(payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["blood-requests"] });
+    },
+  });
+}
+
+export function useUpdateBloodRequestStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: { requestId: string; status: any }) => {
+      const db = useLocalDb.getState();
+      db.updateBloodRequestStatus(payload.requestId, payload.status);
+      return { ok: true };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["blood-requests"] });
+    },
+  });
+}
+
+export function useAuditLogs() {
+  const auditLogs = useLocalDb((state) => state.auditLogs);
+  return useQuery({
+    queryKey: ["audit-logs", auditLogs],
+    queryFn: async () => auditLogs.slice(0, 50),
   });
 }
 

@@ -7,7 +7,13 @@ let lastSharedStateError: string | null = null;
 
 export type SharedStateSnapshot = Pick<
   LocalDbState,
-  "users" | "donors" | "shops" | "messages" | "reports"
+  | "users"
+  | "donors"
+  | "shops"
+  | "messages"
+  | "reports"
+  | "bloodRequests"
+  | "auditLogs"
 >;
 
 export interface SharedStateRecord {
@@ -42,6 +48,8 @@ export function toSharedSnapshot(state: LocalDbState): SharedStateSnapshot {
     shops: state.shops,
     messages: state.messages,
     reports: state.reports,
+    bloodRequests: state.bloodRequests,
+    auditLogs: state.auditLogs,
   };
 }
 
